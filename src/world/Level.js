@@ -11,6 +11,7 @@ const CELL = 8;
 export class Level {
   constructor(game, opts = {}) {
     this.game = game;
+    game.pendingLevel = this;
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(opts.bg ?? 0x000000);
     this.scene.fog = new THREE.FogExp2(opts.fogColor ?? 0x0a0f14, opts.fog ?? 0.02);

@@ -92,8 +92,11 @@ export class Viewmodel {
 
     // held object anchor (inspecting catches, items)
     this.holdAnchor = new THREE.Group();
-    this.holdAnchor.position.set(0, -0.02, -0.55);
+    this.holdAnchor.position.set(0, 0.02, -0.5);
     this.root.add(this.holdAnchor);
+    this.holdLight = new THREE.PointLight(0xfff0dc, 0, 1.6, 1.5);
+    this.holdLight.position.set(0.1, 0.25, -0.2);
+    this.root.add(this.holdLight);
 
     setLayer(this.root, VM_LAYER);
     this.root.traverse((o) => { if (o.isMesh) { o.castShadow = false; o.receiveShadow = false; o.frustumCulled = false; } });
@@ -118,8 +121,9 @@ export class Viewmodel {
     obj.traverse((o) => { if (o.isMesh) { o.castShadow = false; o.frustumCulled = false; } });
     this.holdAnchor.add(obj);
     this.held = obj;
+    this.holdLight.intensity = 1.2;
   }
-  clearHeld() { if (this.held) { this.holdAnchor.remove(this.held); this.held = null; } }
+  clearHeld() { if (this.held) { this.holdAnchor.remove(this.held); this.held = null; } this.holdLight.intensity = 0; }
 
   tipWorld(target) { this.root.updateWorldMatrix(true, true); return this.tip.getWorldPosition(target); }
 
@@ -143,6 +147,7 @@ export class Viewmodel {
       s.rotation.y = this.bendSide * this.bend * 0.08 * w;
     });
     this.reelHandle.rotation.x += this.reelSpin * dt * 20;
+    this.right.visible = this.rodOut > 0.08;
     if (this.shake > 0) {
       this.shake = Math.max(0, this.shake - dt * 2);
       this.root.position.set((Math.random() - 0.5) * 0.01 * this.shake, (Math.random() - 0.5) * 0.01 * this.shake, 0);

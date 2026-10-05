@@ -56,7 +56,7 @@ export class Sky {
           vec3 moon = uMoonColor * crater * disc;
           float ecl = uEclipse * smoothstep(1.0 - uMoonSize*0.06, 1.0 - uMoonSize*0.05, dot(d, normalize(md3 + vec3(0.006,0.003,0.0))));
           moon = mix(moon, uMoonColor * 0.03, ecl);
-          float glow = pow(max(md,0.0), 400.0) * 0.6 + pow(max(md,0.0), 30.0) * 0.12;
+          float glow = pow(max(md,0.0), 900.0) * 0.5 + pow(max(md,0.0), 60.0) * 0.08;
           col += (moon * 1.6 + uMoonColor * glow * (1.0 - uEclipse*0.6)) * uMoonVisible;
           vec2 cp = d.xz / max(d.y + 0.15, 0.05) * 0.6 + vec2(uTime * 0.004, uTime*0.002);
           float cl = smoothstep(0.45, 0.85, fbm(cp)) * uCloud * smoothstep(-0.05, 0.25, d.y);

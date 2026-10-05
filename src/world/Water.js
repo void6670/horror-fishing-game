@@ -65,6 +65,7 @@ export class Water {
       uniforms: this.uniforms,
       fog: true,
       transparent: opacity < 1,
+      polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 4,
       vertexShader: /* glsl */`
         uniform float uTime, uWaveAmp, uLevel; uniform mat4 uTexMatrix;
         varying vec3 vWorld; varying vec4 vMirror;
@@ -116,7 +117,7 @@ export class Water {
           vec3 N = normalize(vec3(-(g.x + sg.x), 1.0, -(g.y + sg.y)));
           vec3 V = normalize(cameraPosition - vWorld);
           float fres = 0.04 + 0.96 * pow(1.0 - max(dot(N, V), 0.0), 5.0);
-          vec2 uv = vMirror.xy / vMirror.w + N.xz * 0.04;
+          vec2 uv = vMirror.xy / vMirror.w + N.xz * 0.09;
           vec3 refl = texture2D(uReflection, uv).rgb * uTint;
           vec3 base = mix(uColor, uDeep, clamp(1.0 - dot(N,V), 0.0, 1.0));
           vec3 col = mix(base, refl, clamp(fres * uReflectivity + 0.25 * uReflectivity, 0.0, 1.0));
@@ -198,7 +199,8 @@ export class Water {
     this.mesh.visible = false;
     const prevRT = renderer.getRenderTarget();
     const auto = renderer.shadowMap.autoUpdate;
-    renderer.shadowMap.autoUpdate = false;
+    this._frames = (this._frames || 0) + 1;
+    if (this._frames > 3) renderer.shadowMap.autoUpdate = false;
     renderer.setRenderTarget(this.rt);
     renderer.clear();
     renderer.render(scene, mc);

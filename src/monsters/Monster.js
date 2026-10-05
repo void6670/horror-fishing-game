@@ -58,7 +58,7 @@ const _v = new THREE.Vector3();
 export class Monster {
   constructor(game, opts = {}) {
     this.game = game;
-    this.level = game.level;
+    this.level = game.pendingLevel || game.level;
     this.name = opts.name || 'Something';
     this.pos = new THREE.Vector3();
     this.yaw = 0;

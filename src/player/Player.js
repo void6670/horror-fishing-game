@@ -9,7 +9,7 @@ const UP = new THREE.Vector3(0, 1, 0);
 // Flashlight: a real shadow-casting spotlight held in the left hand.
 class Flashlight {
   constructor(camera) {
-    this.light = new THREE.SpotLight(0xfff1d6, 0, 32, 0.42, 0.55, 1.5);
+    this.light = new THREE.SpotLight(0xfff1d6, 0, 36, 0.42, 0.55, 1.2);
     this.light.castShadow = true;
     this.light.shadow.mapSize.set(512, 512);
     this.light.shadow.bias = -0.0005;
@@ -21,7 +21,7 @@ class Flashlight {
     this.light.target = this.target;
     this.on = false;
     this.battery = 1;
-    this.maxIntensity = 55;
+    this.maxIntensity = 110;
     this.drain = 1 / 420; // ~7 minutes per battery
     this.flicker = 0;
     this.factor = 0;
@@ -260,7 +260,8 @@ export class Player {
         this.stepPhase -= 1;
         const vol = running ? 0.38 : this.crouch ? 0.08 : 0.2;
         audio.footstep(this.underwater ? 'seabed' : this.surface, vol);
-        const loud = (running ? 22 : this.crouch ? 3 : 9) * (this.surface === 'water' ? 1.8 : this.surface === 'metal' ? 1.5 : this.surface === 'ice' ? 1.3 : 1);
+        const quietBoots = this.game.story.upgrades.boots && ['water', 'snow', 'ice'].includes(this.surface) ? 0.6 : 1;
+        const loud = (running ? 22 : this.crouch ? 3 : 9) * (this.surface === 'water' ? 1.8 : this.surface === 'metal' ? 1.5 : this.surface === 'ice' ? 1.3 : 1) * quietBoots;
         this.game.noise.emit(this.pos, loud, 'step');
         if (this.surface === 'water' && Math.random() < 0.3) audio.splash(null, 0.15);
       }

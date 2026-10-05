@@ -550,6 +550,7 @@ export class Fishing {
     this.model = makeCatchModel(e);
     this.model.rotation.set(0.2, Math.PI / 2, 0);
     if (e.model.type === 'fish') this.model.rotation.y = 0;
+    if (e.model.type === 'clock') this.model.scale.setScalar(0.9);
     game.player.vm.holdObject(this.model);
     game.player.lookLocked = true;
     this.inspectT = 0;

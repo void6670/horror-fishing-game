@@ -151,7 +151,7 @@ export class DrownedSwarm {
     const b = this.boat, p = this.game.player;
     const h = this.hour;
     this.spawnT -= dt;
-    const lightsRepel = b.lightsOn ? 0.35 : 1;
+    const lightsRepel = b.lightsOn || this.game.flareT > 0 ? 0.35 : 1;
     if ((h >= this.spawnStart || this.enraged) && this.spawnT <= 0 && this.list.length < this.max) {
       this.spawn();
       this.spawnT = rand(25, 50) / ((0.6 + h * 0.15) * lightsRepel * (this.enraged ? 1.5 : 1) * this.game.difficulty);
@@ -168,6 +168,7 @@ export class DrownedSwarm {
         d.g.position.set(x, this.water.heightAt(x, z) - 1.15, z);
         d.g.rotation.y = Math.atan2(b.pos.x - x, b.pos.z - z);
         d.body.animate(dt, 1.2, 'reach');
+        if (this.game.flareT > 0 && d.dist < 15) d.lit += dt;
         if (d.lit > 1.2) { audio.splash(d.g.position, 0.5); this.remove(d); continue; }
         if (b.lightsOn && d.dist < 10 && chance(dt * 0.3)) { audio.splash(d.g.position, 0.4); this.remove(d); continue; }
         if (d.dist < 1.8) { d.state = 'climb'; d.t = 0; audio.bump(b.pos, 0.4); audio.creak(b.pos, 0.4); this.game.player.addFear(0.3); this.game.ui.subtitle('Wet hands on the gunwale.', 3); }
