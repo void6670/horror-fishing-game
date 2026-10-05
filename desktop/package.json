@@ -1,0 +1,24 @@
+{
+  "name": "the-deep-hours",
+  "productName": "The Deep Hours",
+  "version": "1.0.0",
+  "description": "A first-person survival horror game about fishing in your own nightmares.",
+  "author": "The Deep Hours",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist:win": "electron-builder --win portable --x64"
+  },
+  "build": {
+    "appId": "com.thedeephours.game",
+    "productName": "The Deep Hours",
+    "files": ["main.js", "game/**"],
+    "directories": { "output": "release" },
+    "win": { "target": "portable", "signAndEditExecutable": false },
+    "portable": { "artifactName": "TheDeepHours.exe" }
+  },
+  "devDependencies": {
+    "electron": "33.2.1",
+    "electron-builder": "26.15.3"
+  }
+}
