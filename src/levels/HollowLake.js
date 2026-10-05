@@ -229,6 +229,7 @@ export function buildHollowLake(game, final = false) {
     if (h === 3) { level.weather.set({ fog: final ? 0.035 : 0.035, wind: 0.4 }); if (!final) fire.setLit(Math.random() < 0.5 ? false : fire.lit); }
     if (h === 5) level.weather.set({ rain: final ? 0 : 0.45, fog: 0.04 });
     if (final && h === 4) level.finalTentAlarm();
+    if (final && h === 2 && level.watcher) level.watcher.activate();
   };
   // moon moves "incorrectly": on Night 1 it slowly rises in the west
   level.onUpdate((dt) => { if (level.sky && !final) level.sky.setMoonAngles(level.sky.azimuth + dt * 0.0006, level.sky.elevation); });

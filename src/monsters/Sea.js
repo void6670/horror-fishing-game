@@ -55,7 +55,7 @@ export class Leviathan extends Monster {
     if (heard && heard.event.type === 'splash') a += 0.01;
     a *= (0.5 + h * 0.18) * this.diff;
     const quiet = !b.engineOn && !b.lightsOn && f.state !== 'fight';
-    this.attention = clamp(this.attention + a * dt * 10 - (quiet ? 0.02 : 0.006) * dt, 0, 1);
+    this.attention = clamp(this.attention + a * dt * 1.6 - (quiet ? 0.02 : 0.004) * dt, 0, 1);
     if (h < 1 && !this.enraged) this.attention = Math.min(this.attention, 0.35);
     // circling shadow under the boat
     this.angle += dt * (0.05 + this.attention * 0.15);

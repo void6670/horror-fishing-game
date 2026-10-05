@@ -212,7 +212,7 @@ export class Angler extends Monster {
     const pd = Math.hypot(p.pos.x - this.pos.x, p.pos.z - this.pos.z);
     let tx, tz, speed;
     const heard = this.hear();
-    if (lit && pd < 60) { tx = p.pos.x; tz = p.pos.z; speed = 1.6 * this.diff; this.alert = Math.min(1, this.alert + dt * 0.2); }
+    if (lit && pd < 60) { tx = p.pos.x; tz = p.pos.z; speed = (0.6 + this.hour * 0.2) * this.diff; this.alert = Math.min(1, this.alert + dt * 0.2); }
     else if (heard) { tx = heard.event.pos.x; tz = heard.event.pos.z; speed = 1.1; }
     else {
       if (!this.wanderTo || Math.hypot(this.wanderTo.x - this.pos.x, this.wanderTo.z - this.pos.z) < 3) this.wanderTo = this.randomPointNear(p.pos.x, p.pos.z, 45);
@@ -233,6 +233,9 @@ export class Angler extends Monster {
       this.snapT -= dt;
       this.jaw.position.z = -5.5 + Math.sin((1 - this.snapT) * Math.PI) * 5;
     }
+    // telegraph: the light flares and the water hums before the jaws close
+    if (pd < 7 && !p.hidden && this.snapT <= 0 && !this.windup) { this.windup = 1.1; audio.growl(this.pos, 0.4, 1.2, 0.6); this.player.addFear(0.4); }
+    if (this.windup) { this.windup -= dt; this.lure.intensity = 14; if (this.windup > 0) return; this.windup = 0; }
     if (pd < 4.5 && !p.hidden && this.snapT <= 0) {
       this.snapT = 1;
       audio.growl(this.pos, 0.5, 1, 1); audio.hit();

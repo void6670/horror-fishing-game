@@ -220,6 +220,7 @@ class Game {
     this.time.clear();
     this.time.onHour((h) => this.onHour(h));
     if (this.lucid) this.time.scale = CONFIG.alarmTimeScale;
+    if (opts.hour) for (let h = 1; h <= opts.hour; h++) level.onHour?.(h);
     if (this.nightmare) level.weather.set({ fog: rand(0.01, 0.06), rain: Math.random() < 0.4 ? rand(0.2, 0.8) : 0 });
     audio.setReverb(level.name === 'harbor' ? 0.5 : level.name === 'deep' ? 0.6 : 0.25);
     audio.setMuffle(level.underwater ? 900 : 20000);
@@ -567,6 +568,19 @@ class Game {
     lines.forEach((l, i) => setTimeout(() => { this.ui.subtitle(`(a child's voice, through water) "${l}"`, 4.5, 'whisper'); audio.say(l, { pitch: 1.7, rate: 0.9, volume: 0.5 }); }, 1200 + i * 4800));
     this.story.addJournal({ id: 'voicemail', title: 'Voicemail, 4:17 AM', text: lines.join('\n') + '\n\n[the rest is water]' });
     this.player.addFear(0.3);
+  }
+
+  // Debug/test hook: advance the simulation without rendering.
+  simulate(seconds, step = 0.05) {
+    for (let t = 0; t < seconds; t += step) {
+      if (this.state !== 'night') break;
+      this.time.update(step); this.noise.update(step);
+      this.level.update(step, this.camera, this.player);
+      this.player.update(step); this.fishing.update(step);
+      for (const m of this.monsters) m.update(step);
+      this.director?.update(step); this.hallu?.update(step);
+      this.input.endFrame();
+    }
   }
 
   // ------------------------------------------------------------------ main loop

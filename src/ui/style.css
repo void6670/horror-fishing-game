@@ -117,7 +117,7 @@ button:disabled { opacity: 0.3; cursor: default; }
 #title .small { margin-top: 14px; font-size: 16px; letter-spacing: .4em; text-transform: uppercase; color: #8a8e88; }
 #title .lines { margin-top: 30px; font-size: 18px; line-height: 1.9; color: #b8b8b0; font-style: italic; }
 
-#menu { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 70%, rgba(20,30,34,0.25), rgba(0,0,0,0.85) 70%); display: flex; align-items: center; padding-left: 9vw; }
+#menu { position: absolute; inset: 0; overflow-y: auto; background: radial-gradient(ellipse at 50% 70%, rgba(20,30,34,0.25), rgba(0,0,0,0.85) 70%); display: flex; align-items: center; padding-left: 9vw; }
 #menu .box { width: 420px; max-width: 86vw; }
 #menu h1 { font-weight: normal; font-size: 44px; white-space: nowrap; letter-spacing: .26em; margin: 0; color: #e0ddd2; text-shadow: 0 0 30px rgba(120,160,170,0.25); }
 #menu .tag { color: #7a807c; letter-spacing: .3em; font-size: 12px; margin: 10px 0 40px; text-transform: uppercase; }

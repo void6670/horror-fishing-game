@@ -265,7 +265,7 @@ export const DE = {
   // Faces in the water, briefly, even when you are calm.
   facesInWater: () => ({
     id: 'faces', hours: [2, 6], chance: 0.7,
-    run: (game) => ({ t: 0, update(dt) { this.t += dt; for (const w of game.level.waters) w.uniforms.uFaces.value = Math.max(w.uniforms.uFaces.value, Math.sin(Math.min(1, this.t / 20) * Math.PI)); return this.t < 20; } }),
+    run: (game) => ({ t: 0, update(dt) { this.t += dt; for (const w of game.level.waters) w._facesBoost = Math.sin(Math.min(1, this.t / 20) * Math.PI); return this.t < 20; }, cleanup() { for (const w of game.level.waters) w._facesBoost = 0; } }),
   }),
   // Your name, called from far away across the water.
   nameCall: () => ({
