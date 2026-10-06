@@ -55,7 +55,7 @@ export class Weather {
     const s = this.state, T = this.target;
     for (const k of Object.keys(T)) s[k] = damp(s[k], T[k], 0.4, dt);
     this.center.copy(camera.position);
-    if (this.scene.fog) this.scene.fog.density = s.fog;
+    if (this.scene.fog) this.scene.fog.density = s.fog * (this.level.fogScale ?? 1.5);
 
     // rain
     this.rain.visible = s.rain > 0.02;

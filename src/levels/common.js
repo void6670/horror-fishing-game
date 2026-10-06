@@ -98,7 +98,6 @@ export function starterKit(game, extra = []) {
   inv.reset(6 + (u.vest ? 2 : 0));
   inv.add('worm', u.bait ? 12 : 8, null, true);
   if (u.bait) inv.add('minnow', 4, null, true);
-  inv.add('battery', 1, null, true);
   inv.add('line', 2, null, true);
   if (u.kit) inv.add('medicine', 1, null, true);
   for (const [id, n] of extra) inv.add(id, n, null, true);

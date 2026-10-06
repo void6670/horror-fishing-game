@@ -199,12 +199,13 @@ export class DrownedSwarm {
       void toB;
     }
   }
+  // They can't stand being looked at: hold your gaze on one and it lets go.
   isLit(d) {
-    const f = this.game.player.flashlight;
-    if (f.factor < 0.2) return false;
-    const to = d.g.position.clone().add(new THREE.Vector3(0, 1, 0)).sub(f.worldPos);
+    const cam = this.game.camera;
+    const to = d.g.position.clone().add(new THREE.Vector3(0, 1, 0)).sub(cam.position);
     const dist = to.length();
-    return dist < 25 && to.normalize().dot(f.worldDir) > 0.92;
+    const dir = new THREE.Vector3(); cam.getWorldDirection(dir);
+    return dist < 16 && to.normalize().dot(dir) > 0.94;
   }
   threatTo() {
     let t = 0;

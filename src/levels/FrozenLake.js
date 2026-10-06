@@ -97,7 +97,7 @@ export function buildFrozenLake(game) {
   closet(level, cab, { lx: -2.4, lz: -1.8, rot: Math.PI / 2 });
   const t2 = table(level, cab, { lx: 1, lz: -1.2 });
   pickup(level, { x: t2.x, z: t2.z, y: t2.top, item: 'memento', qty: 2, label: "Mara's hair clips (keepsake bait)" });
-  pickup(level, { x: t2.x + 0.3, z: t2.z + 0.2, y: t2.top, item: 'battery', qty: 2 });
+  pickup(level, { x: t2.x + 0.3, z: t2.z + 0.2, y: t2.top, item: 'medicine', qty: 1 });
   pickup(level, { ...(() => { const [x, z] = cab.local(-1.5, 1.4); return { x, z }; })(), item: 'medicine', qty: 1, y: cab.baseY });
   note(level, { x: t2.x - 0.3, y: t2.top + 0.01, z: t2.z, standalone: true, title: 'Ice log', w: 0.3, h: 0.36, lines: ['Jan 3 — 14 holes, north half. Lowered the lantern into each.', 'Jan 9 — they called the search. Said spring.', `Jan 12 — ${game.story.name} came out today. Stood on the shore. Didn't come onto the ice. Didn't say anything. Neither did I. I should have.`], journal: { id: 'icelog', title: "Dad's ice log", text: () => `Jan 3 — 14 holes, north half. Lowered the lantern into each.\nJan 9 — they called the search. Said spring.\nJan 12 — ${game.story.name} came out today. Stood on the shore. Didn't come onto the ice. Didn't say anything. Neither did I. I should have.` } });
   lanternLight(level, { x: cab.local(0, 3)[0], y: cab.baseY + 2.2, z: cab.local(0, 3)[1], intensity: 1.5, radius: 4, flicker: 0.3 });
@@ -110,7 +110,7 @@ export function buildFrozenLake(game) {
   const smLight = new THREE.SpotLight(0xfff0d0, 40, 40, 0.45, 0.5, 1.5); smLight.position.set(0, 0.7, -1.1); const smt = new THREE.Object3D(); smt.position.set(0, 0, -10); sm.add(smt); smLight.target = smt; sm.add(smLight);
   level.scene.add(sm);
   level.addBox(30, 108, 0.5, 1.2, -2.6, { y0: smy - 1, y1: smy + 1 });
-  pickup(level, { x: 31.5, z: 107, item: 'battery', qty: 1 });
+  pickup(level, { x: 31.5, z: 107, item: 'worm', qty: 4 });
   pickup(level, { x: 28.5, z: 110, item: 'flare', qty: 1 });
 
   // ---- frozen rowboat & the figure under the ice ----

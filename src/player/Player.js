@@ -54,6 +54,9 @@ export class Player {
     this.camera.layers.enable(1);
     this.vm = new Viewmodel(this.camera);
     this.flashlight = new Flashlight(this.camera);
+    // The near-field light: everything close to you is clearly lit, the distance falls off into fog and dark.
+    this.aura = new THREE.PointLight(0xf2ead8, 0, 34, 2);
+    this.game.camera.parent; // aura follows the player, overhead (see updateAura)
     this.pos = new THREE.Vector3();
     this.vel = new THREE.Vector3();
     this.yaw = 0; this.pitch = 0;
@@ -160,14 +163,15 @@ export class Player {
     const input = this.game.input;
     const level = this.game.level;
     if (!level) return;
-    const controllable = !this.frozen && !this.dead && input.locked && (this.game.state === 'night' || this.game.state === 'day');
+    const controllable = !this.frozen && !this.dead && input.active && (this.game.state === 'night' || this.game.state === 'day');
     this.controllable = controllable;
 
     // ---- look ----
     if (controllable && !this.lookLocked) {
       const s = CONFIG.mouseSensitivity * (this.game.fishing?.state === 'fight' ? 0.6 : 1);
-      this.yaw -= input.mouse.dx * s;
-      this.pitch -= input.mouse.dy * s;
+      const ks = 2.2 * dt * (CONFIG.keyLookSpeed || 1);
+      this.yaw -= input.mouse.dx * s + ((input.down('lookRight') ? 1 : 0) - (input.down('lookLeft') ? 1 : 0)) * ks;
+      this.pitch -= input.mouse.dy * s * (CONFIG.invertY ? -1 : 1) - ((input.down('lookUp') ? 1 : 0) - (input.down('lookDown') ? 1 : 0)) * ks;
       this.pitch = clamp(this.pitch, -1.45, 1.45);
       if (this.hidden) {
         const lim = this.hidden.lookLimit ?? 1.2;
@@ -191,13 +195,13 @@ export class Player {
     // ---- movement ----
     let moveX = 0, moveZ = 0;
     if (controllable && !this.hidden && !this.inBoat?.atHelm) {
-      if (input.down('KeyW')) moveZ -= 1;
-      if (input.down('KeyS')) moveZ += 1;
-      if (input.down('KeyA')) moveX -= 1;
-      if (input.down('KeyD')) moveX += 1;
+      if (input.down('forward')) moveZ -= 1;
+      if (input.down('back')) moveZ += 1;
+      if (input.down('left')) moveX -= 1;
+      if (input.down('right')) moveX += 1;
     }
-    if (controllable && (input.hit('KeyC') || input.hit('ControlLeft'))) this.crouch = !this.crouch;
-    const wantRun = controllable && input.down('ShiftLeft') && moveZ < 0 && !this.crouch && !this.exhausted;
+    if (controllable && input.hit('crouch')) this.crouch = !this.crouch;
+    const wantRun = controllable && input.down('run') && moveZ < 0 && !this.crouch && !this.exhausted;
     const fishingSlow = this.game.fishing && this.game.fishing.busy() ? 0.45 : 1;
     let speed = (this.crouch ? 1.4 : wantRun ? 5.4 : 2.7) * fishingSlow * this.extraSpeed;
     if (this.underwater) speed *= 0.55;
@@ -270,22 +274,22 @@ export class Player {
     if (this.exhausted && Math.random() < dt * 2) { this.game.noise.emit(this.pos, 7, 'breath'); }
     // breath holding while hidden
     if (this.hidden) {
-      const hold = controllable && input.down('Space') && this.breath > 0;
+      const hold = controllable && input.down('breath') && this.breath > 0;
       if (hold) { this.breath = Math.max(0, this.breath - dt * 0.12); if (this.breath === 0) { audio.whisper(null, null, 0.4); this.game.noise.emit(this.pos, 12, 'gasp'); this.addFear(0.2); } }
       else this.breath = Math.min(1, this.breath + dt * 0.18);
       this.holdingBreath = hold;
       if (!hold && Math.random() < dt * 0.4) this.game.noise.emit(this.pos, 2.5 + this.fear * 3, 'breath');
-      if (controllable && input.hit('KeyE')) { this.exitHide(); input.pressed.delete('KeyE'); }
+      if (controllable && input.hit('interact')) { this.exitHide(); input.consume('interact'); }
     } else { this.holdingBreath = false; this.breath = Math.min(1, this.breath + dt * 0.2); }
     this.noise = noise;
     this.running = running;
 
     // ---- flashlight ----
-    if (controllable && input.hit('KeyF')) { this.flashlight.toggle(); this.game.noise.emit(this.pos, 2, 'click'); }
-    if (controllable && input.hit('KeyR')) this.replaceBattery();
+    this.flashlight.on = false;
     this.flashlight.update(dt, this.camera);
+    this.updateAura(dt);
     this.vm.torchRaise = 1;
-    if (controllable && input.hit('KeyQ') && !(this.game.fishing && this.game.fishing.busy())) { this.rodOut = !this.rodOut; this.vm.rodTarget = this.rodOut ? 1 : 0; }
+    if (controllable && input.hit('stow') && !(this.game.fishing && this.game.fishing.busy())) { this.rodOut = !this.rodOut; this.vm.rodTarget = this.rodOut ? 1 : 0; }
 
     // ---- fear ----
     this.updateFear(dt);
@@ -297,6 +301,15 @@ export class Player {
     this.camShake = Math.max(0, this.camShake - dt * 1.8);
     this.applyCamera(dt);
     this.vm.update(dt, { moving: this.hidden ? 0 : this.moving, running, crouch: this.crouch, hidden: !!this.hidden && !this.hidden.showHands });
+  }
+
+  updateAura(dt) {
+    const level = this.game.level;
+    const target = (level.auraIntensity ?? 80) * (this.game.state === 'dying' ? 0.3 : 1);
+    this.aura.intensity = damp(this.aura.intensity, target * (1 - this.fear * 0.25), 3, dt);
+    this.aura.color.setHex(level.auraColor ?? 0xf2ead8);
+    if (this.aura.parent !== level.scene) level.scene.add(this.aura);
+    this.aura.position.set(this.camera.position.x, this.camera.position.y + 2.2, this.camera.position.z);
   }
 
   replaceBattery() {
@@ -313,7 +326,7 @@ export class Player {
     const level = this.game.level;
     const g = this.game;
     const hourF = g.time ? g.time.hour / 6 : 0;
-    const lightHere = Math.max(level.lightAt(this.pos), this.flashlight.factor * 0.55, level.ambientLight ?? 0.15);
+    const lightHere = Math.max(level.lightAt(this.pos), 0.3 + (level.ambientLight ?? 0.15));
     const darkness = clamp(1 - lightHere, 0, 1);
     let threat = 0;
     for (const m of g.monsters) threat = Math.max(threat, m.threatTo ? m.threatTo(this) : 0);
@@ -345,13 +358,13 @@ export class Player {
     this.interactTarget = best;
     if (!best) return;
     if (best.hold > 0) {
-      if (input.down('KeyE')) {
+      if (input.down('interact')) {
         this.holdProgress += dt / best.hold;
         if (best.whileHolding) best.whileHolding(dt);
         if (this.holdProgress >= 1) { this.holdProgress = 0; best.onUse(this); }
       } else this.holdProgress = Math.max(0, this.holdProgress - dt * 2);
-    } else if (input.hit('KeyE')) {
-      input.pressed.delete('KeyE');
+    } else if (input.hit('interact')) {
+      input.consume('interact');
       best.onUse(this);
     }
   }

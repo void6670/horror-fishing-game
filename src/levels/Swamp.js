@@ -106,7 +106,7 @@ export function buildSwamp(game) {
 
   // pickups
   pickup(level, { x: 2, z: 3, item: 'worm', qty: 6, label: 'Bait box' });
-  pickup(level, { x: -68, z: 12, item: 'battery', qty: 2 });
+  pickup(level, { x: -68, z: 12, item: 'medicine', qty: 1 });
   pickup(level, { x: 55, z: 41, item: 'medicine', qty: 1 });
   pickup(level, { x: 10, z: -69, item: 'minnow', qty: 5 });
   pickup(level, { x: -3, z: -2, item: 'bottle', qty: 2 });

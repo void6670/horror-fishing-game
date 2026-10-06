@@ -20,6 +20,8 @@ export function buildRealWorld(game, day, opts = {}) {
     hemi: 0.75, hemiSky: 0xb8c4cc, hemiGround: 0x4a4038, moonIntensity: 0.9, moonColor: 0xffe0c0,
   });
   level.name = 'house';
+  level.auraIntensity = 6;
+  level.fogScale = 1;
   level.ambientLight = 0.6;
   level.fearBase = day >= 5 ? 0.1 : 0;
   level.sky.uniforms.uMoonVisible.value = 0;

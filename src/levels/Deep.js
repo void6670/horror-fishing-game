@@ -15,6 +15,8 @@ import { N } from '../story/Text.js';
 export function buildDeep(game) {
   const level = new Level(game, { fog: 0.055, fogColor: 0x021218, bg: 0x010a0e, waterLevel: 500, bounds: 110, sky: false, hemi: 0.5, hemiSky: 0x2a6a70, hemiGround: 0x020606, moonIntensity: 0.25, moonColor: 0x5a9aa0 });
   level.name = 'deep';
+  level.auraColor = 0x9ad8d0;
+  level.auraIntensity = 45;
   level.ambientLight = 0.1;
   level.allowDeepWater = true;
   level.underwater = true;
@@ -104,7 +106,7 @@ export function buildDeep(game) {
     for (const b of [...bubbles]) { b.position.y += dt * 1.6; b.position.x += Math.sin(b.position.y * 3) * dt * 0.2; if (b.position.y > game.camera.position.y + 8) { level.scene.remove(b); bubbles.splice(bubbles.indexOf(b), 1); } }
   });
   pickup(level, { x: 4, z: 6, item: 'lure', qty: 3, label: 'Glow lures' });
-  pickup(level, { x: -24, z: -27, item: 'battery', qty: 2 });
+  pickup(level, { x: -24, z: -27, item: 'medicine', qty: 1 });
   pickup(level, { x: 25, z: -37, item: 'medicine', qty: 1 });
 
   // ---- monster ----

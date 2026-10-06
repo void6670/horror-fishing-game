@@ -4,6 +4,7 @@ import { fmtTime, clamp } from '../util/math.js';
 import { ITEMS } from '../systems/Inventory.js';
 import { MEMORY_ORDER, ENDINGS, N } from '../story/Text.js';
 import { Save } from '../systems/Save.js';
+import { ACTIONS, DEFAULT_BINDINGS, keyLabel } from '../engine/Input.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html !== undefined) e.innerHTML = html; return e; };
@@ -79,24 +80,24 @@ export class UI {
     if (it && !this.modal && !p.hidden) {
       const txt = typeof it.prompt === 'function' ? it.prompt() : it.prompt;
       const hold = it.hold > 0 ? `<div class="bar"><i style="width:${(p.holdProgress * 100).toFixed(0)}%"></i></div>` : '';
-      const html = `<span class="key">E</span>${esc(txt)}${hold}`;
+      const html = `<span class="key">${esc(g.input.label('interact'))}</span>${esc(txt)}${hold}`;
       if (this._lastPrompt !== html) { this.promptEl.innerHTML = html; this._lastPrompt = html; }
     } else if (p.hidden && !this.modal) {
-      const html = `<span class="key">E</span>Leave ${esc(p.hidden.name)} &nbsp; <span class="key">Space</span>Hold breath ${p.holdingBreath ? '(' + Math.round(p.breath * 100) + '%)' : ''}`;
+      const html = `<span class="key">${esc(g.input.label('interact'))}</span>Leave ${esc(p.hidden.name)} &nbsp; <span class="key">${esc(g.input.label('breath'))}</span>Hold breath ${p.holdingBreath ? '(' + Math.round(p.breath * 100) + '%)' : ''}`;
       if (this._lastPrompt !== html) { this.promptEl.innerHTML = html; this._lastPrompt = html; }
     } else if (this._lastPrompt) { this.promptEl.innerHTML = ''; this._lastPrompt = ''; }
     // status meters — only visible when not full
     const showHp = p.health < p.maxHealth - 0.5, showSt = p.stamina < 0.99;
     const bat = p.flashlight.battery;
-    const showBat = p.flashlight.on && bat < 0.5;
+    const showBat = false;
     const st = $('#status');
     const html = `${showHp ? `<div class="row">Health<div class="meter hp"><i style="width:${(p.health / p.maxHealth * 100).toFixed(0)}%"></i></div></div>` : ''}${showSt ? `<div class="row">Breath<div class="meter"><i style="width:${(p.stamina * 100).toFixed(0)}%"></i></div></div>` : ''}${showBat ? `<div class="row">Light<div class="meter bat"><i style="width:${(bat * 100).toFixed(0)}%"></i></div></div>` : ''}${p.hidden ? `<div class="row">Held breath<div class="meter"><i style="width:${(p.breath * 100).toFixed(0)}%"></i></div></div>` : ''}`;
     if (st._h !== html) { st.innerHTML = html; st._h = html; }
-    $('#battery').classList.toggle('hidden', !(p.flashlight.on && bat < 0.12) && !(bat <= 0));
+    $('#battery').classList.add('hidden');
     if (bat <= 0) $('#battery').textContent = 'Flashlight dead — [R] replace batteries';
     else $('#battery').textContent = 'Battery low';
     // watch
-    const show = g.state === 'night' && (g.input.down('KeyT') || this._forceWatch > 0);
+    const show = g.state === 'night' && (g.input.down('watch') || this._forceWatch > 0);
     this._forceWatch = Math.max(0, (this._forceWatch || 0) - dt);
     const w = $('#watch');
     w.classList.toggle('show', show);
@@ -132,15 +133,16 @@ export class UI {
     const bait = f.bait ? `${ITEMS[f.bait].name} ×${g.inventory.count(f.bait)}` : 'none';
     const depthTxt = f.state === 'waiting' || f.state === 'bite' ? `${f.lineDepth.toFixed(f.lineDepth > 99 ? 0 : 1)} m${f.impossible && f.lineDepth > f.waterDepth ? ' ?' : ''}` : `${f.depthTarget} m`;
     let hint = '';
+    const L = (a) => esc(g.input.label(a));
     switch (f.state) {
-      case 'idle': hint = '<b>Hold LMB</b> to cast · <b>Wheel</b> depth · <b>B</b> bait'; break;
-      case 'unrigged': hint = 'Line snapped. <b>Click</b> to re-rig.'; break;
+      case 'idle': hint = `<b>Hold ${L('cast')}</b> to cast · <b>Wheel</b> or <b>${L('deeper')}/${L('shallower')}</b> depth · <b>${L('bait')}</b> bait`; break;
+      case 'unrigged': hint = `Line snapped. <b>${L('cast')}</b> to re-rig.`; break;
       case 'charging': hint = 'Release to cast'; break;
       case 'flight': hint = '...'; break;
-      case 'ground': hint = '<b>Hold LMB</b> to reel in'; break;
-      case 'waiting': hint = f.nibbleT > 0 ? 'Something is nibbling... wait for it.' : 'Watch the float. <b>Click</b> when it goes under. <b>RMB</b> reel in.'; break;
-      case 'bite': hint = '<b style="color:#e8d090">NOW — CLICK!</b>'; break;
-      case 'fight': hint = '<b>Hold LMB</b> reel · <b>Mouse ⟷</b> counter its pull · ease off when the line screams · <b>X</b> cut'; break;
+      case 'ground': hint = `<b>Hold ${L('cast')}</b> to reel in`; break;
+      case 'waiting': hint = f.nibbleT > 0 ? 'Something is nibbling... wait for it.' : `Watch the float. <b>${L('cast')}</b> when it goes under. <b>${L('reelIn')}</b> reel in.`; break;
+      case 'bite': hint = `<b style="color:#e8d090">NOW — ${L('cast')}!</b>`; break;
+      case 'fight': hint = `<b>Hold ${L('cast')}</b> reel · <b>Mouse ⟷</b> or <b>${L('left')}/${L('right')}</b> counter its pull · ease off when the line screams · <b>${L('cut')}</b> cut`; break;
       case 'inspect': hint = 'Drag the mouse to turn it over.'; break;
       default: break;
     }
@@ -161,7 +163,7 @@ export class UI {
     const box = $('#inspect');
     box.classList.remove('hidden');
     box.innerHTML = `<div><span class="t ${kind}">${esc(name)}</span><span class="s">${esc(sub)}</span></div><div class="d">${esc(desc)}</div>
-      <div class="a">${actions.map((a) => `<span><span class="key">${a.key}</span>${esc(a.label)}</span>`).join('')}</div>`;
+      <div class="a">${actions.map((a) => `<span><span class="key">${esc(this.game.input.label(a.action))}</span>${esc(a.label)}</span>`).join('')}</div>`;
   }
   hideInspect() { $('#inspect').classList.add('hidden'); }
 
@@ -182,7 +184,7 @@ export class UI {
     const d = $('#doc');
     d.className = 'panel interactive' + (memory ? ' memory' : '');
     const body = text ?? (lines || []).join('\n\n');
-    d.innerHTML = `<h3>${esc(title || '')}</h3><div>${esc(body)}</div><div class="close">[E] / [Esc] / click to close</div>`;
+    d.innerHTML = `<h3>${esc(title || '')}</h3><div>${esc(body)}</div><div class="close">[${esc(this.game.input.label('interact'))}] / [Esc] / click to close</div>`;
     if (tex && tex.image && tex.image.getContext) {
       const c = document.createElement('canvas'); c.width = tex.image.width; c.height = tex.image.height;
       c.getContext('2d').drawImage(tex.image, 0, 0);
@@ -222,8 +224,8 @@ export class UI {
       detail = `<div class="t">${esc(d.name)}${sel.qty > 1 ? ' ×' + sel.qty : ''}</div><div class="d">${esc(d.desc || '')}</div>${acts.map((a, k) => `<button data-a="${k}">${esc(a.label)}</button>`).join('')}`;
       this._acts = acts;
     }
-    const lightTxt = `Flashlight ${(g.player.flashlight.battery * 100).toFixed(0)}% · Health ${Math.round(g.player.health)} · Relics carried ${inv.relics().length}`;
-    box.innerHTML = `<h2>Tackle bag</h2><div class="sub">${inv.slots.length}/${inv.capacity} slots — what you carry, you carry. [I] / [Tab] close</div><div class="grid">${grid}</div><div class="detail">${detail}</div><div class="equip">Rod, reel, knife and flashlight are always with you. ${lightTxt}</div>`;
+    const lightTxt = `Health ${Math.round(g.player.health)} · Relics carried ${inv.relics().length}`;
+    box.innerHTML = `<h2>Tackle bag</h2><div class="sub">${inv.slots.length}/${inv.capacity} slots — what you carry, you carry. [${esc(g.input.label('inventory'))}] / [Tab] close</div><div class="grid">${grid}</div><div class="detail">${detail}</div><div class="equip">Rod, reel and knife are always with you. ${lightTxt}</div>`;
     box.querySelectorAll('.slot[data-i]').forEach((s) => s.onclick = () => { this.selSlot = +s.dataset.i; audio.uiClick(); this.refreshInventory(); });
     box.querySelectorAll('button[data-a]').forEach((b) => b.onclick = () => { const a = this._acts[+b.dataset.a]; a.fn(); this.refreshInventory(); });
   }
@@ -329,6 +331,7 @@ export class UI {
   // ---------------------------------------------------------------- main menu
   showMenu(page = 'main', fromPause = false) {
     const m = $('#menu');
+    if (fromPause) this.hidePause();
     m.classList.remove('hidden');
     const g = this.game;
     const save = Save.load();
@@ -353,6 +356,8 @@ export class UI {
         <label>Volume <input type="range" id="sVol" min="0" max="1" step="0.05" value="${CONFIG.masterVolume}"></label>
         <label>Mouse sensitivity <input type="range" id="sSens" min="0.0006" max="0.005" step="0.0002" value="${CONFIG.mouseSensitivity}"></label>
         <label>Field of view <input type="range" id="sFov" min="55" max="95" step="1" value="${CONFIG.fov}"></label>
+        <label>Brightness <input type="range" id="sBright" min="0.6" max="1.8" step="0.05" value="${CONFIG.brightness}"></label>
+        <label>Retro pixel look <input type="checkbox" id="sRetro" ${CONFIG.retro ? 'checked' : ''}></label>
         <label>Graphics <select id="sQual"><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></label>
         <label>Night length <select id="sLen"><option value="60">Short (6 min)</option><option value="100">Normal (10 min)</option><option value="150">Long (15 min)</option><option value="240">Very long (24 min)</option></select></label>
         <label>Alarm clock odds <select id="sAlarm"><option value="0.6">Rare</option><option value="1">Normal</option><option value="1.6">Frequent</option></select></label>
@@ -361,13 +366,14 @@ export class UI {
         <div class="note">Alarm odds per catch by hour (12–5 AM): ${s.alarmChanceByHour.map((v) => (v * 100).toFixed(0) + '%').join(' · ')}</div>
         <div style="margin-top:16px">${back}</div></div>`;
     } else if (page === 'controls') {
-      html = `<h1 style="font-size:30px">Controls</h1><div class="page controls">
-        <div><b>W A S D</b> move</div><div><b>Shift</b> run</div><div><b>C / Ctrl</b> crouch</div><div><b>Mouse</b> look</div>
-        <div><b>Hold LMB</b> cast / reel</div><div><b>LMB click</b> set the hook</div><div><b>Mouse ⟷</b> fight the pull</div><div><b>RMB</b> reel in</div>
-        <div><b>Wheel</b> line depth</div><div><b>B</b> cycle bait</div><div><b>X</b> cut line</div><div><b>Q</b> stow / draw rod</div>
-        <div><b>F</b> flashlight</div><div><b>R</b> new batteries</div><div><b>E</b> interact / hide</div><div><b>Space</b> hold breath (hidden)</div>
-        <div><b>T</b> check watch</div><div><b>I / Tab</b> tackle bag</div><div><b>J</b> journal</div><div><b>L</b> boat lights</div><div><b>Esc</b> pause</div>
-        </div><div style="margin-top:16px">${back}</div>`;
+      const b = g.input.bindings;
+      html = `<h1 style="font-size:30px">Controls</h1><div class="page binds">
+        <div class="note" style="margin:0 0 10px">Click a key to change it, then press the new key or mouse button. Esc cancels.</div>
+        ${ACTIONS.map(([a, name]) => `<label><span>${esc(name)}</span><button class="bind" data-a="${a}">${esc(keyLabel(b[a]))}</button></label>`).join('')}
+        <label><span>Invert mouse Y</span><input type="checkbox" id="cInvert" ${CONFIG.invertY ? 'checked' : ''}></label>
+        <label><span>Arrow-key look speed</span><input type="range" id="cKeyLook" min="0.3" max="2.5" step="0.1" value="${CONFIG.keyLookSpeed || 1}"></label>
+        <div class="note">Tab always opens the bag and Esc always pauses. The mouse wheel also sets line depth. If your browser won't capture the mouse, just move the mouse over the game window to look around, or use the look keys.</div>
+        <div style="margin-top:14px"><button id="cReset">Reset to defaults</button>${back}</div></div>`;
     } else if (page === 'endings') {
       html = `<h1 style="font-size:30px">Endings</h1><div class="page endings">${Object.entries(ENDINGS).map(([k, e]) => `<div class="${meta.endings.includes(k) ? 'got' : ''}">${meta.endings.includes(k) ? esc(e.title) : '???'}</div>`).join('')}</div>
         <div class="note">Some endings ask you to remember everything. One asks you to break a rule.</div><div style="margin-top:16px">${back}</div>`;
@@ -389,6 +395,23 @@ export class UI {
     on('mEndings', () => this.showMenu('endings'));
     on('mBack', () => { if (fromPause) { this.hideMenu(); this.showPause(); } else this.showMenu('main'); });
     m.querySelectorAll('button[data-n]').forEach((b) => b.onclick = () => { audio.init(); this.hideMenu(); g.startFromNight(+b.dataset.n); });
+    m.querySelectorAll('button.bind').forEach((btn) => btn.onclick = () => {
+      m.querySelectorAll('button.bind').forEach((x) => x.classList.remove('wait'));
+      btn.classList.add('wait'); btn.textContent = 'Press a key…';
+      g.input.onCapture = (code) => {
+        if (code !== 'Escape') {
+          const a = btn.dataset.a, bnd = g.input.bindings;
+          const clash = Object.keys(bnd).find((k) => k !== a && bnd[k] === code);
+          if (clash) bnd[clash] = bnd[a];
+          bnd[a] = code;
+          this.persistSettings();
+        }
+        setTimeout(() => this.showMenu('controls', fromPause), 0);
+      };
+    });
+    on('cReset', () => { g.input.setBindings({}); this.persistSettings(); this.showMenu('controls', fromPause); });
+    const inv = $('#cInvert'); if (inv) inv.onchange = (e) => { CONFIG.invertY = e.target.checked; this.persistSettings(); };
+    const kl = $('#cKeyLook'); if (kl) kl.oninput = (e) => { CONFIG.keyLookSpeed = +e.target.value; this.persistSettings(); };
     if (page === 'settings') {
       const s = g.story.settings;
       $('#sQual').value = CONFIG.quality;
@@ -401,16 +424,19 @@ export class UI {
       $('#sQual').onchange = (e) => { CONFIG.quality = e.target.value; g.applyQuality(); this.persistSettings(); };
       $('#sLen').onchange = (e) => { s.secondsPerHour = +e.target.value; this.persistSettings(); };
       $('#sAlarm').onchange = (e) => { s.alarmChanceByHour = CONFIG.alarmChanceByHour.map((v) => Math.min(1, v * +e.target.value)); this.persistSettings(); this.showMenu('settings', fromPause); };
+      $('#sBright').oninput = (e) => { CONFIG.brightness = +e.target.value; this.persistSettings(); };
+      $('#sRetro').onchange = (e) => { CONFIG.retro = e.target.checked; this.persistSettings(); };
       $('#sClock').onchange = (e) => { CONFIG.showClockAlways = e.target.checked; this.persistSettings(); };
       $('#sVoice').onchange = (e) => { CONFIG.voiceSynthesis = e.target.checked; this.persistSettings(); };
     }
   }
   persistSettings() {
     const s = this.game.story.settings;
-    Object.assign(s, { volume: CONFIG.masterVolume, sens: CONFIG.mouseSensitivity, fov: CONFIG.fov, quality: CONFIG.quality, clock: CONFIG.showClockAlways, voice: CONFIG.voiceSynthesis });
+    Object.assign(s, { volume: CONFIG.masterVolume, sens: CONFIG.mouseSensitivity, fov: CONFIG.fov, quality: CONFIG.quality, clock: CONFIG.showClockAlways, voice: CONFIG.voiceSynthesis, bindings: { ...this.game.input.bindings }, invertY: CONFIG.invertY, keyLook: CONFIG.keyLookSpeed, retro: CONFIG.retro, brightness: CONFIG.brightness });
     this.game.story.saveSettings();
   }
-  hideMenu() { $('#menu').classList.add('hidden'); }
+  hideMenu() { $('#menu').classList.add('hidden'); this.game.input.onCapture = null; }
+  get menuOpen() { return !$('#menu').classList.contains('hidden'); }
 
   showClickToPlay(v) { $('#clickToPlay').classList.toggle('hidden', !v); }
 

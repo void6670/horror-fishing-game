@@ -12,9 +12,9 @@ export class Viewmodel {
     this.camera = camera;
     this.root = new THREE.Group();
     camera.add(this.root);
-    const skin = new THREE.MeshStandardMaterial({ color: 0x9c7a64, roughness: 0.8 });
+    const skin = new THREE.MeshStandardMaterial({ color: 0x5a463a, roughness: 0.9 });
     const sleeve = new THREE.MeshStandardMaterial({ color: 0x2e3a2e, roughness: 0.95 });
-    const cork = new THREE.MeshStandardMaterial({ color: 0x8a6a46, roughness: 1 });
+    const cork = new THREE.MeshStandardMaterial({ color: 0x5a442e, roughness: 1 });
     const blank = new THREE.MeshStandardMaterial({ color: 0x1c1a18, roughness: 0.4, metalness: 0.2 });
     const metal = new THREE.MeshStandardMaterial({ color: 0x777b80, roughness: 0.35, metalness: 0.8 });
 
@@ -153,6 +153,7 @@ export class Viewmodel {
       this.root.position.set((Math.random() - 0.5) * 0.01 * this.shake, (Math.random() - 0.5) * 0.01 * this.shake, 0);
     } else this.root.position.set(0, 0, 0);
     this.root.visible = !hidden;
+    this.left.visible = false; // no flashlight: the near-field light does its job
     void crouch; void swimming;
   }
 }

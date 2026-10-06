@@ -36,7 +36,10 @@ export class Level {
       this.scene.add(this.sky.mesh);
     }
     // lights
-    this.hemi = new THREE.HemisphereLight(opts.hemiSky ?? 0x2a3848, opts.hemiGround ?? 0x0a0c0a, opts.hemi ?? 0.35);
+    // Near-bright / far-dark look: a generous ambient fill, the player's near-field light, and thick fog to black.
+    this.hemi = new THREE.HemisphereLight(opts.hemiSky ?? 0x2a3848, opts.hemiGround ?? 0x0a0c0a, (opts.hemi ?? 0.35) * (opts.hemiBoost ?? 1.9));
+    this.auraIntensity = opts.aura ?? 80;
+    this.fogScale = opts.fogScale ?? 1.5;
     this.scene.add(this.hemi);
     this.moon = new THREE.DirectionalLight(opts.moonColor ?? 0x9fb4d0, opts.moonIntensity ?? 0.55);
     this.moon.castShadow = opts.shadows !== false;

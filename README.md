@@ -21,26 +21,31 @@ Use a desktop browser with WebGL2 (Chrome, Edge or Firefox). Headphones are stro
 
 ## Controls
 
+Every control can be rebound in **Pause → Controls** (or Controls on the title screen), including mouse buttons. Defaults:
+
 | Key | Action |
 | --- | --- |
-| W A S D / Shift / C | move / run (uses stamina) / crouch (quieter) |
-| Mouse | look |
+| W A S D / Shift / C | move / run (uses stamina) / crouch toggle (quieter) |
+| Mouse or arrow keys | look (invert Y and arrow-key speed are in Controls) |
 | Hold LMB, release | charge and cast (power meter) |
-| Mouse wheel | line depth (1–60 m) |
-| LMB click | set the hook when the float goes under |
-| Hold LMB | reel; reel in an empty line |
-| Mouse left/right | during a fight, counter the fish's pull to lower tension |
+| Mouse wheel or G / V | line deeper / shallower |
+| LMB | set the hook when the float goes under; hold to reel |
+| Mouse left/right or A / D | during a fight, counter the fish's pull |
 | RMB | reel in |
-| X | cut the line (you will need to) |
+| X | cut the line |
 | B | cycle bait |
+| E / F / R | keep / cut open / release a catch |
 | Q | stow or draw the rod |
-| F / R | flashlight / replace batteries |
 | E | interact, hide, leave a hiding spot |
 | Space (hidden) | hold your breath |
 | T | look at your watch |
-| I or Tab / J | tackle bag (inventory) / journal |
+| I or Tab / J | tackle bag / journal |
 | L | boat lights (Night 3) |
-| Esc | pause, settings |
+| P or Esc | pause |
+
+Click the game to capture the mouse. If the browser or window refuses mouse capture, the game switches to free-mouse mode automatically: moving the mouse over the window still turns the view, and the arrow keys look around.
+
+There is no flashlight. The area right around you is lit and the world falls off into fog and darkness the further away it is. Settings has a brightness slider and a retro pixel look (on by default).
 
 ## The seven nights
 

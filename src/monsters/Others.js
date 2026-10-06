@@ -208,7 +208,7 @@ export class Angler extends Monster {
     super.update(dt);
     if (this.game.state !== 'night') return;
     const p = this.player;
-    const lit = p.flashlight.factor > 0.2;
+    const lit = p.running || p.moving > 1.1 || (this.game.fishing.state === 'fight');
     const pd = Math.hypot(p.pos.x - this.pos.x, p.pos.z - this.pos.z);
     let tx, tz, speed;
     const heard = this.hear();

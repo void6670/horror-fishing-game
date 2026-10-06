@@ -43,6 +43,7 @@ class Game {
     this.camera = new THREE.PerspectiveCamera(CONFIG.fov, innerWidth / innerHeight, 0.12, 1200);
     this.post = new PostFX(this.renderer, new THREE.Scene(), this.camera);
     this.input = new Input(canvas);
+    this.input.setBindings(this._savedBindings);
     this.events = new Events();
     this.story = new Story(this);
     this.ui = new UI(this);
@@ -83,6 +84,11 @@ class Game {
     if (s.quality) CONFIG.quality = s.quality;
     if (s.clock !== undefined) CONFIG.showClockAlways = s.clock;
     if (s.voice !== undefined) CONFIG.voiceSynthesis = s.voice;
+    if (s.invertY !== undefined) CONFIG.invertY = s.invertY;
+    if (s.keyLook) CONFIG.keyLookSpeed = s.keyLook;
+    if (s.retro !== undefined) CONFIG.retro = s.retro;
+    if (s.brightness) CONFIG.brightness = s.brightness;
+    this._savedBindings = s.bindings;
   }
   applyQuality() {
     const q = QUALITY[CONFIG.quality] || QUALITY.high;
@@ -107,7 +113,7 @@ class Game {
     if (this.ui.modalOpen || this.paused || this.cine) return;
     if (this.state === 'night' || this.state === 'day') this.pause();
   }
-  pause() { this.paused = true; this.ui.showPause(); audio.setMuffle(600); }
+  pause() { if (this.paused) return; this.paused = true; this.input.unlock(); this.ui.showPause(); audio.setMuffle(600); }
   resume() { this.paused = false; this.ui.hidePause(); this.ui.hideMenu(); audio.setMuffle(20000); this.input.lock(); }
 
   // ------------------------------------------------------------------ level management
@@ -250,7 +256,7 @@ class Game {
     this.ui.flashWatch(3);
     if (n === 1 && !opts.restart && !this.story.flags.tutorial) {
       this.story.flags.tutorial = true;
-      setTimeout(() => this.ui.toast('Hold [LMB] to cast. Scroll to set depth. [F] flashlight. [T] check your watch.'), 1500);
+      setTimeout(() => { const L = (a) => this.input.label(a); this.ui.toast(`Hold [${L('cast')}] to cast. Scroll or [${L('deeper')}]/[${L('shallower')}] for depth. [${L('watch')}] check your watch. Rebind keys in Pause → Controls.`); }, 1500);
       setTimeout(() => this.ui.toast('Survive until 6:00 AM.'), 7000);
     }
     this.tryLock();
@@ -625,18 +631,23 @@ class Game {
       }
       if (this.cine) this.updateCine(rawDt);
     }
-    // global keys
-    if ((st === 'night' || st === 'day') && !this.paused) {
-      if ((input.hit('KeyI') || input.hit('Tab'))) { if (!this.ui.modalOpen || this.ui.modal === 'inventory') this.ui.openInventory(); }
-      if (input.hit('KeyJ')) { if (!this.ui.modalOpen || this.ui.modal === 'journal') this.ui.openJournal(); }
-      if (this.ui.modal === 'doc' && (input.hit('KeyE') || input.hit('Escape'))) this.ui.closeModal();
-      else if (this.ui.modal && this.ui.modal !== 'choice' && this.ui.modal !== 'upgrade' && input.hit('Escape')) this.ui.closeModal();
-    }
-    this.ui.showClickToPlay((st === 'night' || st === 'day') && !input.locked && !this.paused && !this.ui.modalOpen && !this.cine);
+    // global keys (read raw so they also work while a panel has released the mouse)
+    const k = (a) => input.codesFor(a).some((c) => input.pressed.has(c));
+    if ((st === 'night' || st === 'day') && !this.paused && !input.onCapture) {
+      const modal = this.ui.modal;
+      if (modal === 'doc' && (k('interact') || input.rawHit('Escape'))) this.ui.closeModal();
+      else if (modal && modal !== 'choice' && modal !== 'upgrade' && input.rawHit('Escape')) this.ui.closeModal();
+      else if (k('inventory') && (!modal || modal === 'inventory')) this.ui.openInventory();
+      else if (k('journal') && (!modal || modal === 'journal')) this.ui.openJournal();
+      else if (!modal && !this.cine && k('pause')) this.pause();
+    } else if (this.paused && !input.onCapture && input.rawHit(input.bindings.pause) && !this.ui.menuOpen) this.resume();
+    this.ui.showClickToPlay((st === 'night' || st === 'day') && !input.active && !this.paused && !this.ui.modalOpen && !this.cine);
     this.ui.updateHUD(dt);
     // post & audio
     const u = this.post.u;
     const p = this.player;
+    u.uPixel.value = CONFIG.retro ? Math.max(2, Math.round(3 * this.renderer.getPixelRatio())) : 0;
+    this.renderer.toneMappingExposure = 1.5 * CONFIG.brightness;
     const live = st === 'night' || st === 'day';
     u.uFear.value = live ? p.fear : 0;
     if (st !== 'dying') u.uDamage.value = live ? p.damageFlash * 0.8 + (p.health < 35 ? 0.25 + Math.sin(performance.now() * 0.005) * 0.1 : 0) : 0;

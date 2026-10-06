@@ -8,7 +8,7 @@ export const ITEMS = {
   lure: { name: 'Glow Lure', kind: 'bait', icon: '✦', stack: 4, desc: 'A phosphorescent lure. It reaches deep water — and is seen from far away.', reusable: true },
   chum: { name: 'Fish Chunks', kind: 'bait', icon: '▤', stack: 6, desc: 'Cut from your catch. Big things smell it. Big things.' },
   memento: { name: 'Keepsake Bait', kind: 'bait', icon: '❦', stack: 3, desc: 'Something of yours, tied to the hook. The water wants what is yours.' },
-  battery: { name: 'Batteries', kind: 'battery', icon: '▮', stack: 4, desc: 'For the flashlight. [R] to replace.' },
+  battery: { name: 'Batteries', kind: 'battery', icon: '▮', stack: 4, desc: 'Old batteries. Nothing here needs them anymore.' },
   medicine: { name: 'Bandage & Pills', kind: 'medicine', icon: '+', stack: 3, desc: 'Restores health. Use from inventory.' },
   line: { name: 'Spare Line & Hook', kind: 'tackle', icon: '∮', stack: 5, desc: 'Re-rig after a snapped line.' },
   fuel: { name: 'Fuel Can', kind: 'fuel', icon: '⛽', stack: 2, desc: 'Refuels the boat engine.' },

@@ -124,7 +124,7 @@ export function buildHarbor(game) {
   }
   // pickups
   for (const [x, z] of [[-30, 8], [10, 6], [35, 22], [-60, 25], [55, 8], [-5, -20], [-40, -30]]) pickup(level, { x, z, y: Q, item: 'bottle', qty: 1 });
-  pickup(level, { x: w1.local(-8, 4)[0], z: w1.local(-8, 4)[1], y: Q, item: 'battery', qty: 2 });
+  pickup(level, { x: w1.local(-8, 4)[0], z: w1.local(-8, 4)[1], y: Q, item: 'medicine', qty: 1 });
   pickup(level, { x: 2, z: -26, y: Q, item: 'chum', qty: 3, label: 'Bait bucket' });
   pickup(level, { x: -40, z: -38, y: Q, item: 'minnow', qty: 4 });
 

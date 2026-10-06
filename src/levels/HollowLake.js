@@ -146,12 +146,12 @@ export function buildHollowLake(game, final = false) {
   // scattered supplies
   pickup(level, { x: 3, z: Rs + 4, item: 'worm', qty: 6, label: 'Bait box' });
   pickup(level, { x: island.x + 1, z: island.z + 2, item: 'lure', qty: 1, label: 'Tackle box' });
-  pickup(level, { x: camp.x - 2.5, z: camp.z - 2, item: 'battery', qty: 1 });
-  pickup(level, { x: -40, z: Rs + 25, item: 'battery', qty: 1 });
+  pickup(level, { x: camp.x - 2.5, z: camp.z - 2, item: 'worm', qty: 4 });
+  pickup(level, { x: -40, z: Rs + 25, item: 'worm', qty: 4 });
   pickup(level, { x: 40, z: Rs + 12, item: 'worm', qty: 4, label: 'Bait box' });
   // glovebox
   let glove = false;
-  level.addInteractable({ pos: new THREE.Vector3(carApi.group.position.x + 0.9, carApi.group.position.y + 1, carApi.group.position.z - 0.8), radius: 1.5, prompt: 'Open the glovebox', cond: () => !glove, onUse: () => { glove = true; game.inventory.add('battery', 2); game.ui.toast('Under the batteries: a hospital parking stub. St. Agnes. Dated this week.'); game.story.addJournal({ id: 'stub', title: 'Parking stub', text: 'St. Agnes Hospital — visitor parking. Dated this week. You have not been to a hospital.' }); } });
+  level.addInteractable({ pos: new THREE.Vector3(carApi.group.position.x + 0.9, carApi.group.position.y + 1, carApi.group.position.z - 0.8), radius: 1.5, prompt: 'Open the glovebox', cond: () => !glove, onUse: () => { glove = true; game.inventory.add('medicine', 1); game.ui.toast('Under a first-aid tin: a hospital parking stub. St. Agnes. Dated this week.'); game.story.addJournal({ id: 'stub', title: 'Parking stub', text: 'St. Agnes Hospital — visitor parking. Dated this week. You have not been to a hospital.' }); } });
   // car radio: conversations that haven't happened yet
   let radioOn = false, radioIdx = 0;
   level.addInteractable({

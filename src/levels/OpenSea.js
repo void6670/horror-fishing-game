@@ -78,7 +78,7 @@ export function buildOpenSea(game) {
       if (cr.taken) continue;
       if (Math.hypot(cr.x - boat.pos.x, cr.z - boat.pos.z) < 5 && !cr.it) {
         cr.it = level.addInteractable({ pos: new THREE.Vector3(cr.x, 0.5, cr.z), radius: 6, wide: true, prompt: 'Haul the floating crate aboard', onUse: () => {
-          const loot = [['fuel', 1], ['battery', 2], ['minnow', 6], ['chum', 3], ['medicine', 1], ['flare', 1], ['lure', 2], ['line', 2]];
+          const loot = [['fuel', 1], ['minnow', 6], ['chum', 3], ['medicine', 1], ['flare', 1], ['lure', 2], ['line', 2]];
           const [id, q] = loot[Math.floor(Math.random() * loot.length)];
           if (game.inventory.add(id, q)) { cr.taken = true; level.scene.remove(cr.c); level.removeInteractable(cr.it); audio.splash(cr.c.position, 0.4); }
         } });

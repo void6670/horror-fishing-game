@@ -108,35 +108,36 @@ export class Fishing {
     const canAct = player.controllable && !player.hidden && player.rodOut && !game.ui.modalOpen;
     player.vm.tipWorld(this._tip);
 
-    if (canAct && input.hit('KeyB') && !['fight', 'inspect'].includes(this.state)) this.cycleBait();
-    if (canAct && input.mouse.wheel && ['idle', 'charging', 'waiting'].includes(this.state)) {
+    if (canAct && input.hit('bait') && !['fight', 'inspect'].includes(this.state)) this.cycleBait();
+    const depthStep = input.mouse.wheel || (input.hit('deeper') ? 1 : input.hit('shallower') ? -1 : 0);
+    if (canAct && depthStep && ['idle', 'charging', 'waiting'].includes(this.state)) {
       const steps = [1, 2, 3, 5, 8, 12, 20, 35, 60];
       let i = steps.findIndex((s) => s >= this.depthTarget);
       if (i < 0) i = steps.length - 1;
-      i = clamp(i + (input.mouse.wheel > 0 ? -1 : 1), 0, steps.length - 1);
+      i = clamp(i + (input.mouse.wheel ? (input.mouse.wheel > 0 ? -1 : 1) : depthStep), 0, steps.length - 1);
       this.depthTarget = steps[i];
       audio.reelClick(0.6);
     }
 
     switch (this.state) {
       case 'unrigged':
-        if (canAct && input.mouse.leftPressed) this.rerig();
+        if (canAct && input.hit('cast')) this.rerig();
         break;
       case 'idle':
-        if (canAct && input.mouse.leftPressed && !player.inBoat?.atHelm) { this.state = 'charging'; this.chargeT = 0; }
+        if (canAct && input.hit('cast') && !player.inBoat?.atHelm) { this.state = 'charging'; this.chargeT = 0; }
         break;
       case 'charging': {
         this.chargeT += dt;
         this.power = 0.5 - 0.5 * Math.cos(this.chargeT * 2.6);
         player.vm.castPull = damp(player.vm.castPull, 0.4 + this.power * 0.6, 10, dt);
-        if (!input.mouse.left || !canAct) {
+        if (!input.down('cast') || !canAct) {
           if (canAct) this.cast(); else { this.state = 'idle'; player.vm.castPull = 0; }
         }
         break;
       }
       case 'flight': this.updateFlight(dt); break;
       case 'ground':
-        if (canAct && input.mouse.left) this.retrieve(dt, true);
+        if (canAct && input.down('cast')) this.retrieve(dt, true);
         break;
       case 'waiting': this.updateWaiting(dt, canAct); break;
       case 'bite': this.updateBite(dt, canAct); break;
@@ -144,7 +145,7 @@ export class Fishing {
       case 'inspect': this.updateInspect(dt); break;
       default: break;
     }
-    if (canAct && input.mouse.rightPressed && ['waiting', 'ground', 'flight'].includes(this.state)) {
+    if (canAct && input.hit('reelIn') && ['waiting', 'ground', 'flight'].includes(this.state)) {
       this.game.ui.toast('You reel in.'); audio.lineZip(0.1); this.reset();
     }
     player.vm.castPull = this.state === 'charging' ? player.vm.castPull : damp(player.vm.castPull, 0, 8, dt);
@@ -281,12 +282,12 @@ export class Fishing {
     let dip = 0;
     if (this.nibbleT > 0) { this.nibbleT -= dt; dip = Math.max(0, Math.sin(this.nibbleT * 25)) * 0.03; }
     this.bob(dt, dip);
-    if (canAct && input.mouse.leftPressed && this.nibbleT > 0) {
+    if (canAct && input.hit('cast') && this.nibbleT > 0) {
       // struck too early
       if (Math.random() < 0.6) { this.game.ui.toast('Too early. You spooked it.'); this.nextEvent = this.computeWait(); this.nibbles = Math.floor(rand(0, 3)); if (this.bait && !ITEMS[this.bait].reusable && Math.random() < 0.3) this.consumeBait('Your bait was stripped.'); this.nibbleT = 0; return; }
       this.beginBite(true); return;
     }
-    if (canAct && input.mouse.left && this.nibbleT <= 0) { this.retrieve(dt); this.nextEvent += dt; return; }
+    if (canAct && input.down('cast') && this.nibbleT <= 0) { this.retrieve(dt); this.nextEvent += dt; return; }
     const depthReady = this.impossible ? this.lineDepth > 40 : this.lineDepth >= target - 0.1;
     if (!depthReady) return;
     this.waitT += dt;
@@ -323,7 +324,7 @@ export class Fishing {
     const depth = e.kind === 'alarm' ? Math.min(0.6, this.biteT * 0.25) : 0.12 + Math.sin(this.biteT * 30) * 0.03;
     this.bob(dt, depth);
     this.game.player.vm.bend = 0.4 + Math.sin(this.biteT * 25) * 0.15;
-    if (canAct && input.mouse.leftPressed) { this.hook(); return; }
+    if (canAct && input.hit('cast')) { this.hook(); return; }
     if (this.biteT > this.biteWindow) {
       this.state = 'waiting';
       this.nextEvent = this.computeWait(); this.nibbles = Math.floor(rand(0, 3)); this.waitT = 0;
@@ -361,7 +362,7 @@ export class Fishing {
     audio.lineZip(0.25);
     this.game.player.vm.shake = 0.6;
     this.game.noise.emit(this.bobberPos, 14, 'splash');
-    if (e.kind === 'grab') { this.game.player.addFear(0.5); audio.sting(0.4); this.game.ui.toast('[X] CUT THE LINE', 'danger'); }
+    if (e.kind === 'grab') { this.game.player.addFear(0.5); audio.sting(0.4); this.game.ui.toast(`[${this.game.input.label('cut')}] CUT THE LINE`, 'danger'); }
     this.game.events.emit('hooked', this.catch);
   }
 
@@ -387,9 +388,9 @@ export class Fishing {
     }
     f.pull = damp(f.pull, pullTarget * f.str * (0.35 + 0.65 * f.stamina), 6, dt);
     // ---- player input ----
-    if (canAct) this.rodSide = clamp(this.rodSide + input.mouse.dx * 0.0045, -1, 1);
+    if (canAct) this.rodSide = clamp(this.rodSide + input.mouse.dx * 0.0045 + ((input.down('right') ? 1 : 0) - (input.down('left') ? 1 : 0)) * dt * 2.2, -1, 1);
     this.rodSide = damp(this.rodSide, 0, 0.6, dt);
-    const reeling = canAct && input.mouse.left;
+    const reeling = canAct && input.down('cast');
     const mismatch = Math.abs(this.rodSide + f.dir) / 2;
     let t = f.pull * (0.55 + mismatch * 0.65) + (reeling ? (0.28 + f.pull * 0.55) * s.reelTension : 0);
     if (e.kind === 'alarm') t = Math.min(t, 0.9);
@@ -425,9 +426,9 @@ export class Fishing {
       if (!player.inBoat) { player.pos.addScaledVector(toward, dt * (0.6 + this.grabT * 0.3)); }
       else player.inBoat.tug?.(toward, dt);
       player.camShake = 0.4;
-      if (canAct && input.hit('KeyX')) { this.cutLine(); return; }
+      if (canAct && input.hit('cut')) { this.cutLine(); return; }
       if (this.grabT > 4.5) { this.yanked(); return; }
-    } else if (canAct && input.hit('KeyX')) { this.cutLine(); return; }
+    } else if (canAct && input.hit('cut')) { this.cutLine(); return; }
     // ---- fish position ----
     const lateral = f.dir * Math.min(7, this.lineOut * 0.35);
     const perp = new THREE.Vector3(-this.castDir.z, 0, this.castDir.x);
@@ -570,11 +571,11 @@ export class Fishing {
     const acts = [];
     if (e.vanish) return acts;
     const isFish = e.model.type === 'fish';
-    if (e.memory || e.kind === 'story') acts.push({ key: 'E', label: 'Keep (journal)', fn: () => this.keep() });
-    else if (e.kind === 'relic') acts.push({ key: 'E', label: 'Take (uses a slot)', fn: () => this.keep() });
-    else if (isFish || e.item) acts.push({ key: 'E', label: 'Keep (uses a slot)', fn: () => this.keep() });
-    if (isFish && e.kind !== 'story') acts.push({ key: 'C', label: e.contents ? 'Cut it open' : 'Cut into bait', fn: () => this.cut() });
-    acts.push({ key: 'R', label: isFish ? 'Release' : 'Throw back', fn: () => this.release() });
+    if (e.memory || e.kind === 'story') acts.push({ action: 'interact', label: 'Keep (journal)', fn: () => this.keep() });
+    else if (e.kind === 'relic') acts.push({ action: 'interact', label: 'Take (uses a slot)', fn: () => this.keep() });
+    else if (isFish || e.item) acts.push({ action: 'interact', label: 'Keep (uses a slot)', fn: () => this.keep() });
+    if (isFish && e.kind !== 'story') acts.push({ action: 'cutCatch', label: e.contents ? 'Cut it open' : 'Cut into bait', fn: () => this.cut() });
+    acts.push({ action: 'release', label: isFish ? 'Release' : 'Throw back', fn: () => this.release() });
     return acts;
   }
 
@@ -612,7 +613,7 @@ export class Fishing {
     }
     if (e.whisper) { this.whT = (this.whT || 0) - dt; if (this.whT <= 0) { audio.whisper(null, this.inspectT < 1 ? N() : null, 0.2); this.whT = 3; } }
     if (this.game.ui.modalOpen) return;
-    for (const a of this.actionsFor(e)) if (input.hit('Key' + a.key)) { a.fn(); return; }
+    for (const a of this.actionsFor(e)) if (input.hit(a.action)) { input.consume(a.action); a.fn(); return; }
   }
 
   keep() {
@@ -648,7 +649,7 @@ export class Fishing {
         game.ui.toast('There was a key inside it.');
       }
       game.inventory.add('chum', 1, null, true);
-      game.ui.showInspect({ name: 'Inside...', desc: e.contents.startsWith('memory') ? 'A photograph, folded twice, sealed in a sandwich bag. It is dry.' : 'A rusted key on a wire ring. The paper tag is unreadable except for one word: BOATHOUSE.', actions: [{ key: 'E', label: 'Done', fn: () => this.closeInspect() }] });
+      game.ui.showInspect({ name: 'Inside...', desc: e.contents.startsWith('memory') ? 'A photograph, folded twice, sealed in a sandwich bag. It is dry.' : 'A rusted key on a wire ring. The paper tag is unreadable except for one word: BOATHOUSE.', actions: [{ action: 'interact', label: 'Done', fn: () => this.closeInspect() }] });
       this.catch.entry = { ...e, contents: null, desc: 'Gutted.', model: { type: 'item', item: 'none' } };
       return;
     }

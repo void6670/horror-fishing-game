@@ -117,8 +117,8 @@ button:disabled { opacity: 0.3; cursor: default; }
 #title .small { margin-top: 14px; font-size: 16px; letter-spacing: .4em; text-transform: uppercase; color: #8a8e88; }
 #title .lines { margin-top: 30px; font-size: 18px; line-height: 1.9; color: #b8b8b0; font-style: italic; }
 
-#menu { position: absolute; inset: 0; overflow-y: auto; background: radial-gradient(ellipse at 50% 70%, rgba(20,30,34,0.25), rgba(0,0,0,0.85) 70%); display: flex; align-items: center; padding-left: 9vw; }
-#menu .box { width: 420px; max-width: 86vw; }
+#menu { position: absolute; inset: 0; overflow-y: auto; padding-block: 32px; background: radial-gradient(ellipse at 50% 70%, rgba(20,30,34,0.55), rgba(0,0,0,0.92) 70%); display: flex; align-items: flex-start; padding-left: 9vw; padding-right: 16px; }
+#menu .box { width: 460px; max-width: 86vw; margin-block: auto; }
 #menu h1 { font-weight: normal; font-size: 44px; white-space: nowrap; letter-spacing: .26em; margin: 0; color: #e0ddd2; text-shadow: 0 0 30px rgba(120,160,170,0.25); }
 #menu .tag { color: #7a807c; letter-spacing: .3em; font-size: 12px; margin: 10px 0 40px; text-transform: uppercase; }
 #menu .items button { display: block; width: 100%; text-align: left; border: none; padding: 9px 0; font-size: 19px; letter-spacing: .12em; color: #b8bab0; background: none; }
@@ -167,3 +167,7 @@ button:disabled { opacity: 0.3; cursor: default; }
 #loading { position: absolute; left: 50%; bottom: 10%; transform: translateX(-50%); font-size: 12px; letter-spacing: .3em; color: #6a6e6a; text-transform: uppercase; }
 #battery { position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); font-size: 11px; letter-spacing: .15em; color: var(--warn); text-transform: uppercase; }
 #boathud { position: absolute; left: 50%; bottom: 46px; transform: translateX(-50%); font-family: var(--mono); font-size: 12px; color: #b8bab2; text-shadow: 0 0 4px #000; display: flex; gap: 22px; }
+
+#menu .binds label { padding: 4px 0; }
+#menu button.bind { min-width: 110px; font-family: var(--mono); text-align: center; margin: 0; }
+#menu button.bind.wait { border-color: #e0d8b0; color: #e0d8b0; }

@@ -23,6 +23,8 @@ const HorrorShader = {
     uVignette: { value: 0.55 },
     uAspect: { value: 1 },
     uLetterbox: { value: 0 },
+    uPixel: { value: 0 },
+    uRes: { value: new THREE.Vector2(1920, 1080) },
   },
   vertexShader: /* glsl */`
     varying vec2 vUv;
@@ -30,11 +32,13 @@ const HorrorShader = {
   `,
   fragmentShader: /* glsl */`
     uniform sampler2D tDiffuse;
-    uniform float uTime, uFear, uDamage, uWarp, uDesat, uBlack, uWhite, uUnderwater, uRed, uGrain, uVignette, uAspect, uLetterbox;
+    uniform float uTime, uFear, uDamage, uWarp, uDesat, uBlack, uWhite, uUnderwater, uRed, uGrain, uVignette, uAspect, uLetterbox, uPixel;
+    uniform vec2 uRes;
     varying vec2 vUv;
     float hash(vec2 p){ return fract(sin(dot(p, vec2(12.9898,78.233))) * 43758.5453); }
     void main(){
       vec2 uv = vUv;
+      if (uPixel > 1.0) { vec2 px = uPixel / uRes; uv = (floor(uv / px) + 0.5) * px; }
       vec2 c = uv - 0.5;
       float r = length(c * vec2(uAspect, 1.0));
       // fear: slow breathing warp at edges
@@ -46,7 +50,7 @@ const HorrorShader = {
       uv = mix(uv, rot * (uv - 0.5) + 0.5, uWarp);
       // underwater ripple
       uv += uUnderwater * 0.004 * vec2(sin(uv.y * 40.0 + uTime * 2.0), cos(uv.x * 35.0 + uTime * 1.7));
-      float ca = 0.0015 + uFear * 0.006 + uWarp * 0.01 + uDamage * 0.008;
+      float ca = (uPixel > 1.0 ? 0.0 : 0.0015) + uFear * 0.006 + uWarp * 0.01 + uDamage * 0.008;
       vec3 col;
       col.r = texture2D(tDiffuse, uv + c * ca).r;
       col.g = texture2D(tDiffuse, uv).g;
@@ -88,6 +92,6 @@ export class PostFX {
     this.u = this.horror.uniforms;
   }
   setScene(scene, camera) { this.renderPass.scene = scene; this.renderPass.camera = camera; }
-  setSize(w, h) { this.composer.setSize(w, h); this.u.uAspect.value = w / h; }
+  setSize(w, h) { this.composer.setSize(w, h); this.u.uAspect.value = w / h; this.u.uRes.value.set(w, h); }
   render(dt) { this.u.uTime.value += dt; this.composer.render(dt); }
 }

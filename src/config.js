@@ -15,6 +15,10 @@ export const CONFIG = {
   masterVolume: 0.9,
   showClockAlways: false,
   playerName: 'Sam',
+  invertY: false,
+  keyLookSpeed: 1,
+  brightness: 1,
+  retro: true,
   debug: false,
 };
 

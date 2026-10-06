@@ -108,7 +108,7 @@ export class Boat {
     const hour = Math.floor(this.game.time.hour);
     if (this.crateUsed > hour) { this.game.ui.toast('The crate is empty. Maybe later.'); return; }
     this.crateUsed = hour + 2;
-    const loot = [['fuel', 1], ['battery', 1], ['minnow', 4], ['line', 1], ['flare', 1]];
+    const loot = [['fuel', 1], ['minnow', 4], ['line', 1], ['flare', 1]];
     const [id, n] = loot[Math.floor(Math.random() * loot.length)];
     if (!inv.add(id, n)) this.crateUsed = 0;
     audio.creak(null, 0.2);
@@ -130,7 +130,7 @@ export class Boat {
 
   toggleHelm() {
     this.atHelm = !this.atHelm;
-    if (this.atHelm) { this.local.set(0, 0, -1.25); this.game.ui.toast('[W/S] throttle · [A/D] steer · [L] lights · [E] leave helm'); }
+    if (this.atHelm) { this.local.set(0, 0, -1.25); { const L = (a) => this.game.input.label(a); this.game.ui.toast(`[${L('forward')}/${L('back')}] throttle · [${L('left')}/${L('right')}] steer · [${L('boatLights')}] lights · [${L('interact')}] leave helm`); } }
   }
 
   stall(msg = 'The engine chokes and dies.') {
@@ -158,12 +158,12 @@ export class Boat {
     const input = this.game.input;
     const p = this.game.player;
     if (this.atHelm && p.controllable) {
-      if (input.down('KeyW')) this.throttle = Math.min(1, this.throttle + dt * 0.6);
-      if (input.down('KeyS')) this.throttle = Math.max(-0.3, this.throttle - dt * 0.8);
-      this.rudder = (input.down('KeyA') ? 1 : 0) - (input.down('KeyD') ? 1 : 0);
-      if (input.hit('KeyE')) { this.toggleHelm(); input.pressed.delete('KeyE'); }
+      if (input.down('forward')) this.throttle = Math.min(1, this.throttle + dt * 0.6);
+      if (input.down('back')) this.throttle = Math.max(-0.3, this.throttle - dt * 0.8);
+      this.rudder = (input.down('left') ? 1 : 0) - (input.down('right') ? 1 : 0);
+      if (input.hit('interact')) { this.toggleHelm(); input.consume('interact'); }
     } else this.rudder = 0;
-    if (p.controllable && input.hit('KeyL') && this.game.player.inBoat === this) { this.lightsOn = !this.lightsOn; audio.click(0.3); }
+    if (p.controllable && input.hit('boatLights') && this.game.player.inBoat === this) { this.lightsOn = !this.lightsOn; audio.click(0.3); }
     if (this.fuel <= 0 && this.engineOn) this.stall('Out of fuel.');
     const thrust = this.engineOn ? this.throttle : 0;
     if (this.engineOn) this.fuel = Math.max(0, this.fuel - dt * 0.004 * (0.2 + Math.abs(thrust)));
