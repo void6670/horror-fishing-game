@@ -1,0 +1,33 @@
+{
+  "applicationId": "com.thedeephours.game",
+  "version": "1.0.0",
+  "defaultMode": "window",
+  "documentRoot": "/resources/",
+  "url": "/",
+  "enableServer": true,
+  "enableNativeAPI": false,
+  "tokenSecurity": "one-time",
+  "logging": { "enabled": false, "writeToLogFile": false },
+  "nativeAllowList": [],
+  "modes": {
+    "window": {
+      "title": "The Deep Hours",
+      "width": 1600,
+      "height": 900,
+      "minWidth": 800,
+      "minHeight": 450,
+      "fullScreen": false,
+      "maximize": true,
+      "center": true,
+      "resizable": true,
+      "enableInspector": false
+    }
+  },
+  "cli": {
+    "binaryName": "TheDeepHours",
+    "resourcesPath": "/resources/",
+    "extensionsPath": "/extensions/",
+    "binaryVersion": "6.4.0",
+    "clientVersion": "6.4.0"
+  }
+}

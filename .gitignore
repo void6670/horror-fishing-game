@@ -5,3 +5,8 @@ dist
 desktop/node_modules
 desktop/release
 desktop/game
+neutralino/bin
+neutralino/dist
+neutralino/resources/index.html
+neutralino/.tmp
+TheDeepHours.exe
