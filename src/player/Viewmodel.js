@@ -121,7 +121,7 @@ export class Viewmodel {
     obj.traverse((o) => { if (o.isMesh) { o.castShadow = false; o.frustumCulled = false; } });
     this.holdAnchor.add(obj);
     this.held = obj;
-    this.holdLight.intensity = 1.2;
+    this.holdLight.intensity = 0.3;
   }
   clearHeld() { if (this.held) { this.holdAnchor.remove(this.held); this.held = null; } this.holdLight.intensity = 0; }
 

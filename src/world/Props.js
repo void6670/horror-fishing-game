@@ -3,6 +3,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { mulberry32 } from '../util/noise.js';
 import { woodTexture, barkTexture, rustTexture, concreteTexture, textTexture, noiseTexture } from './Materials.js';
 import { audio } from '../engine/Audio.js';
+import { Models } from './Models.js';
 
 // Three.js Y-rotation convention: local (lx, lz) -> world.
 export const toWorld = (x, z, rot, lx, lz) => [x + lx * Math.cos(rot) + lz * Math.sin(rot), z - lx * Math.sin(rot) + lz * Math.cos(rot)];
@@ -115,8 +116,8 @@ export function forest(level, { count = 400, area = 180, accept = () => true, se
   const dummy = new THREE.Object3D();
   const group = new THREE.Group();
   if (kind === 'pine') {
-    const trunkG = new THREE.CylinderGeometry(0.12, 0.28, 3, 6); trunkG.translate(0, 1.5, 0);
-    const crownG = pineGeometry(rnd);
+    let trunkG = Models.geo('pine_trunk'), crownG = Models.geo('pine_crown');
+    if (!trunkG || !crownG) { trunkG = new THREE.CylinderGeometry(0.12, 0.28, 3, 6); trunkG.translate(0, 1.5, 0); crownG = pineGeometry(rnd); }
     const trunks = new THREE.InstancedMesh(trunkG, mat('bark'), pts.length);
     const crowns = new THREE.InstancedMesh(crownG, mat('pine'), pts.length);
     pts.forEach(([x, z, s, r], i) => {
@@ -126,7 +127,7 @@ export function forest(level, { count = 400, area = 180, accept = () => true, se
     });
     for (const m of [trunks, crowns]) { m.castShadow = true; m.receiveShadow = true; group.add(m); }
   } else {
-    const variants = [0, 1, 2].map(() => deadTreeGeometry(rnd, 7 + rnd() * 5));
+    const variants = [0, 1, 2].map((i) => Models.geo(`dead_tree_${i}`) || deadTreeGeometry(rnd, 7 + rnd() * 5));
     const buckets = [[], [], []];
     pts.forEach((p, i) => buckets[i % 3].push(p));
     buckets.forEach((b, vi) => {
@@ -145,10 +146,14 @@ export function forest(level, { count = 400, area = 180, accept = () => true, se
 
 export function rocks(level, { count = 80, area = 180, accept = () => true, seed = 2, scale = [0.4, 1.6], collide = true, color }) {
   const rnd = mulberry32(seed);
-  const g = new THREE.DodecahedronGeometry(1, 0);
-  const p = g.attributes.position;
-  for (let i = 0; i < p.count; i++) p.setXYZ(i, p.getX(i) * (0.8 + rnd() * 0.4), p.getY(i) * (0.6 + rnd() * 0.3), p.getZ(i) * (0.8 + rnd() * 0.4));
-  g.computeVertexNormals();
+  let g = Models.geo(`rock_${seed % 3}`);
+  if (g) g = g.clone().scale(0.6, 0.6, 0.6);
+  else {
+    g = new THREE.DodecahedronGeometry(1, 0);
+    const p = g.attributes.position;
+    for (let i = 0; i < p.count; i++) p.setXYZ(i, p.getX(i) * (0.8 + rnd() * 0.4), p.getY(i) * (0.6 + rnd() * 0.3), p.getZ(i) * (0.8 + rnd() * 0.4));
+    g.computeVertexNormals();
+  }
   const m = color ? new THREE.MeshStandardMaterial({ color, roughness: 1, flatShading: true }) : mat('rock');
   const pts = [];
   let tries = 0;
@@ -313,9 +318,14 @@ export function dock(level, { x, z, rot = 0, length = 14, width = 2.2, top = 0.6
 
 export function rowboat(level, { x, z, rot = 0, y, color = 0x3d4a52, parent }) {
   const g = new THREE.Group();
+  const model = Models.geo('rowboat');
   const hullMat = new THREE.MeshStandardMaterial({ color, roughness: 0.8, map: woodTexture('boat', [80, 80, 80], 8) });
-  const shape = new THREE.Shape();
-  shape.moveTo(-0.7, -1.9); shape.quadraticCurveTo(-0.85, 0, -0.6, 1.4); shape.lineTo(0, 2.1); shape.lineTo(0.6, 1.4); shape.quadraticCurveTo(0.85, 0, 0.7, -1.9); shape.lineTo(-0.7, -1.9);
+  if (model) {
+    const hm = new THREE.Mesh(model, hullMat); hm.castShadow = true; hm.receiveShadow = true;
+    g.add(hm);
+  } else {
+    const shape = new THREE.Shape();
+    shape.moveTo(-0.7, -1.9); shape.quadraticCurveTo(-0.85, 0, -0.6, 1.4); shape.lineTo(0, 2.1); shape.lineTo(0.6, 1.4); shape.quadraticCurveTo(0.85, 0, 0.7, -1.9); shape.lineTo(-0.7, -1.9);
   const hull = new THREE.Mesh(new THREE.ExtrudeGeometry(shape, { depth: 0.55, bevelEnabled: false }), hullMat);
   hull.rotation.x = Math.PI / 2; hull.position.y = 0.55; hull.castShadow = true;
   g.add(hull);
@@ -323,6 +333,7 @@ export function rowboat(level, { x, z, rot = 0, y, color = 0x3d4a52, parent }) {
   inside.rotation.x = -Math.PI / 2; inside.position.y = 0.12; inside.scale.set(0.9, 0.9, 1);
   g.add(inside);
   box(1.3, 0.05, 0.3, 'wood', 0, 0.42, 0.3, g); box(1.2, 0.05, 0.3, 'wood', 0, 0.42, -1.1, g);
+  }
   g.position.set(x, y ?? level.waterLevel - 0.15, z);
   g.rotation.y = rot;
   (parent || level.scene).add(g);
@@ -333,8 +344,9 @@ export function tent(level, { x, z, rot = 0, color = 'tentRed', hide = true, nam
   const g = new THREE.Group();
   const y = level.heightAt(x, z);
   g.position.set(x, y, z); g.rotation.y = rot;
-  const geo = new THREE.ConeGeometry(1.5, 1.6, 4, 1, true); geo.rotateY(Math.PI / 4); geo.scale(1, 1, 1.4);
-  const m = new THREE.Mesh(geo, mat(color)); m.position.y = 0.8; m.castShadow = true;
+  let m;
+  if (Models.geo('tent')) { m = Models.mesh('tent', mat(color)); }
+  else { const geo = new THREE.ConeGeometry(1.5, 1.6, 4, 1, true); geo.rotateY(Math.PI / 4); geo.scale(1, 1, 1.4); m = new THREE.Mesh(geo, mat(color)); m.position.y = 0.8; m.castShadow = true; }
   g.add(m);
   const fl = box(2, 0.03, 2.8, 'fabric', 0, 0.02, 0, g); fl.castShadow = false;
   level.scene.add(g);
@@ -353,11 +365,15 @@ export function car(level, { x, z, rot = 0, color = 0x2c3238, lightsOn = false }
   const y = level.heightAt(x, z);
   g.position.set(x, y, z); g.rotation.y = rot;
   const paint = new THREE.MeshStandardMaterial({ color, roughness: 0.4, metalness: 0.5 });
-  box(1.8, 0.7, 4.3, paint, 0, 0.65, 0, g);
-  box(1.6, 0.6, 2.2, paint, 0, 1.25, 0.2, g);
-  const glass = box(1.62, 0.5, 2.0, mat('glass'), 0, 1.27, 0.2, g); glass.castShadow = false;
-  for (const [wx, wz] of [[-0.85, 1.4], [0.85, 1.4], [-0.85, -1.4], [0.85, -1.4]]) {
-    const w = cyl(0.34, 0.34, 0.25, 'black', wx, 0.34, wz, g, 12); w.rotation.z = Math.PI / 2;
+  if (Models.geo('car_body')) {
+    for (const [n, m] of [['car_body', paint], ['car_glass', mat('glass')], ['car_wheels', mat('black')]]) { g.add(Models.mesh(n, m)); }
+  } else {
+    box(1.8, 0.7, 4.3, paint, 0, 0.65, 0, g);
+    box(1.6, 0.6, 2.2, paint, 0, 1.25, 0.2, g);
+    const glass = box(1.62, 0.5, 2.0, mat('glass'), 0, 1.27, 0.2, g); glass.castShadow = false;
+    for (const [wx, wz] of [[-0.85, 1.4], [0.85, 1.4], [-0.85, -1.4], [0.85, -1.4]]) {
+      const w = cyl(0.34, 0.34, 0.25, 'black', wx, 0.34, wz, g, 12); w.rotation.z = Math.PI / 2;
+    }
   }
   const hlMat = new THREE.MeshBasicMaterial({ color: lightsOn ? 0xfff2cc : 0x333333 });
   const hl1 = box(0.3, 0.15, 0.05, hlMat, -0.6, 0.75, -2.16, g, false), hl2 = box(0.3, 0.15, 0.05, hlMat, 0.6, 0.75, -2.16, g, false);

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { Monster, makeHumanoid } from './Monster.js';
 import { audio } from '../engine/Audio.js';
+import { Models } from '../world/Models.js';
 import { rand, chance, clamp, damp } from '../util/math.js';
 
 // ---------------------------------------------------------------- The Dockhands (harbor pack)
@@ -193,10 +194,15 @@ export class Angler extends Monster {
     // enormous jaw, mostly invisible in darkness
     const dark = new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 0.5 });
     this.jaw = new THREE.Group();
+    if (Models.geo('angler_head')) {
+      this.jaw.add(Models.mesh('angler_head', dark));
+      this.jaw.add(Models.mesh('angler_teeth', new THREE.MeshStandardMaterial({ color: 0xd8d0c0, roughness: 0.3 })));
+    } else {
     const head = new THREE.Mesh(new THREE.SphereGeometry(4.5, 16, 12), dark);
     head.scale.set(1.2, 0.8, 1); this.jaw.add(head);
     const tooth = new THREE.MeshStandardMaterial({ color: 0xd8d0c0, roughness: 0.3 });
     for (let i = 0; i < 18; i++) { const t = new THREE.Mesh(new THREE.ConeGeometry(0.12, 1.4, 5), tooth); const a = (i / 18) * Math.PI - Math.PI / 2; t.position.set(Math.sin(a) * 3.6, i % 2 ? 0.9 : -0.9, 3.6 + Math.cos(a) * 0.5); t.rotation.x = i % 2 ? Math.PI : 0; this.jaw.add(t); }
+    }
     this.jaw.position.set(0, -2.5, -5.5);
     this.mesh.add(this.jaw);
     const stalk = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.12, 6, 5), dark); stalk.position.set(0, -0.5, -2.6); stalk.rotation.x = 0.8; this.mesh.add(stalk);

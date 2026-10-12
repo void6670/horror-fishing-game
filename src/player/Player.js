@@ -305,7 +305,8 @@ export class Player {
 
   updateAura(dt) {
     const level = this.game.level;
-    const target = (level.auraIntensity ?? 80) * (this.game.state === 'dying' ? 0.3 : 1);
+    const holding = this.game.fishing && this.game.fishing.state === 'inspect';
+    const target = (level.auraIntensity ?? 80) * (this.game.state === 'dying' ? 0.3 : 1) * (holding ? 0.3 : 1);
     this.aura.intensity = damp(this.aura.intensity, target * (1 - this.fear * 0.25), 3, dt);
     this.aura.color.setHex(level.auraColor ?? 0xf2ead8);
     if (this.aura.parent !== level.scene) level.scene.add(this.aura);

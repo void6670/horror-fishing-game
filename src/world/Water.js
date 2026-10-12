@@ -119,6 +119,8 @@ export class Water {
           float fres = 0.04 + 0.96 * pow(1.0 - max(dot(N, V), 0.0), 5.0);
           vec2 uv = vMirror.xy / vMirror.w + N.xz * 0.09;
           vec3 refl = texture2D(uReflection, uv).rgb * uTint;
+          if (!(refl.r == refl.r && refl.g == refl.g && refl.b == refl.b)) refl = vec3(0.0); // NaN guard
+          refl = clamp(refl, 0.0, 16.0);
           vec3 base = mix(uColor, uDeep, clamp(1.0 - dot(N,V), 0.0, 1.0));
           vec3 col = mix(base, refl, clamp(fres * uReflectivity + 0.25 * uReflectivity, 0.0, 1.0));
           vec3 R = reflect(-normalize(uMoonDir), N);
@@ -135,7 +137,8 @@ export class Water {
             float f = face(vWorld.xz + vec2(sin(uTime*0.2), cos(uTime*0.17)) * 0.8);
             col += vec3(0.25, 0.3, 0.3) * f * uFaces * (0.6 + 0.4 * sin(uTime * 0.5));
           }
-          gl_FragColor = vec4(col, uOpacity);
+          if (!(col.r == col.r && col.g == col.g && col.b == col.b)) col = uDeep;
+          gl_FragColor = vec4(clamp(col, 0.0, 16.0), uOpacity);
           #include <fog_fragment>
         }
       `,

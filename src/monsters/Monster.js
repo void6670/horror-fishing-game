@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { audio } from '../engine/Audio.js';
+import { Models } from '../world/Models.js';
 import { clamp, damp, angleWrap, inView, rand } from '../util/math.js';
 
 // ---------------------------------------------------------------- procedural bodies
@@ -11,33 +12,42 @@ export function makeHumanoid({ height = 1.8, thin = 1, color = 0x2a2e28, skin = 
   const clothMat = new THREE.MeshStandardMaterial({ color, roughness: 0.95 });
   const skinMat = new THREE.MeshStandardMaterial({ color: skin, roughness: 0.6 });
   const mk = (geo, m, x, y, z, parent) => { const mesh = new THREE.Mesh(geo, m); mesh.position.set(x, y, z); mesh.castShadow = true; parent.add(mesh); return mesh; };
+  // Blender body part (normalized: pivot at origin) scaled into place, if the model is available.
+  const part = (name, m, x, y, z, parent, sx, sy, sz) => {
+    const g = Models.geo(name); if (!g) return null;
+    const mesh = mk(g, m, x, y, z, parent); mesh.scale.set(sx, sy, sz); return mesh;
+  };
+  const B = Models.ready;
   const hips = new THREE.Group(); hips.position.y = 0.95 * s; body.add(hips);
   const torso = new THREE.Group(); hips.add(torso); torso.rotation.x = hunch;
-  mk(new THREE.CylinderGeometry(0.17 * s * thin, 0.15 * s * thin, 0.62 * s, 8), clothMat, 0, 0.31 * s, 0, torso);
-  if (coat) mk(new THREE.CylinderGeometry(0.2 * s * thin, 0.26 * s * thin, 0.75 * s, 8, 1, true), clothMat, 0, 0.12 * s, 0, torso).material.side = THREE.DoubleSide;
+  if (!part('h_torso', clothMat, 0, 0, 0, torso, 0.17 * s * thin, 0.62 * s, 0.17 * s * thin)) mk(new THREE.CylinderGeometry(0.17 * s * thin, 0.15 * s * thin, 0.62 * s, 8), clothMat, 0, 0.31 * s, 0, torso);
+  if (coat && B) part('h_coat', new THREE.MeshStandardMaterial({ color, roughness: 0.95, side: THREE.DoubleSide }), 0, 0.5 * s, 0, torso, 0.25 * s * thin, 0.78 * s, 0.25 * s * thin);
+  else if (coat) mk(new THREE.CylinderGeometry(0.2 * s * thin, 0.26 * s * thin, 0.75 * s, 8, 1, true), clothMat, 0, 0.12 * s, 0, torso).material.side = THREE.DoubleSide;
   const neck = new THREE.Group(); neck.position.y = 0.66 * s; torso.add(neck);
-  const head = mk(new THREE.SphereGeometry(0.11 * s, 10, 8), skinMat, 0, 0.12 * s, 0, neck);
-  head.scale.set(0.9, 1.15, 0.95);
+  const head = part('h_head', skinMat, 0, 0.12 * s, 0, neck, 0.1 * s, 0.1 * s, 0.1 * s) || mk(new THREE.SphereGeometry(0.11 * s, 10, 8), skinMat, 0, 0.12 * s, 0, neck);
+  if (!B) head.scale.set(0.9, 1.15, 0.95);
   if (hat) {
     const hatMat = new THREE.MeshStandardMaterial({ color: 0x3a3a28, roughness: 1 });
-    mk(new THREE.CylinderGeometry(0.26 * s, 0.26 * s, 0.02 * s, 14), hatMat, 0, 0.22 * s, 0, neck);
-    mk(new THREE.CylinderGeometry(0.11 * s, 0.13 * s, 0.12 * s, 10), hatMat, 0, 0.28 * s, 0, neck);
+    if (!part('h_hat', hatMat, 0, 0.21 * s, 0, neck, 0.26 * s, 0.26 * s, 0.26 * s)) {
+      mk(new THREE.CylinderGeometry(0.26 * s, 0.26 * s, 0.02 * s, 14), hatMat, 0, 0.22 * s, 0, neck);
+      mk(new THREE.CylinderGeometry(0.11 * s, 0.13 * s, 0.12 * s, 10), hatMat, 0, 0.28 * s, 0, neck);
+    }
   }
   const eyeMeshes = [];
   if (eyes) {
     const em = new THREE.MeshBasicMaterial({ color: emissiveEyes });
     for (const sx of [-1, 1]) eyeMeshes.push(mk(new THREE.SphereGeometry(0.012 * s, 6, 4), em, sx * 0.04 * s, 0.14 * s, 0.1 * s, neck));
   }
-  const limb = (x, y, len, r, m, parent) => {
+  const limb = (x, y, len, r, m, parent, model) => {
     const g = new THREE.Group(); g.position.set(x, y, 0); parent.add(g);
-    mk(new THREE.CylinderGeometry(r * 0.8, r, len, 6), m, 0, -len / 2, 0, g);
+    if (!(model && part(model, m, 0, 0, 0, g, r * 1.15, len / 1.05, r * 1.15))) mk(new THREE.CylinderGeometry(r * 0.8, r, len, 6), m, 0, -len / 2, 0, g);
     return g;
   };
-  const armL = limb(-0.22 * s * thin, 0.58 * s, 0.75 * s * armLen, 0.045 * s, clothMat, torso);
-  const armR = limb(0.22 * s * thin, 0.58 * s, 0.75 * s * armLen, 0.045 * s, clothMat, torso);
-  for (const a of [armL, armR]) mk(new THREE.SphereGeometry(0.05 * s, 6, 4), skinMat, 0, -0.78 * s * armLen, 0, a);
-  const legL = limb(-0.09 * s, 0, 0.95 * s, 0.07 * s, clothMat, hips);
-  const legR = limb(0.09 * s, 0, 0.95 * s, 0.07 * s, clothMat, hips);
+  const armL = limb(-0.22 * s * thin, 0.58 * s, 0.75 * s * armLen, 0.045 * s, clothMat, torso, 'h_arm');
+  const armR = limb(0.22 * s * thin, 0.58 * s, 0.75 * s * armLen, 0.045 * s, clothMat, torso, 'h_arm');
+  if (!B) for (const a of [armL, armR]) mk(new THREE.SphereGeometry(0.05 * s, 6, 4), skinMat, 0, -0.78 * s * armLen, 0, a);
+  const legL = limb(-0.09 * s, 0, 0.95 * s, 0.07 * s, clothMat, hips, 'h_leg');
+  const legR = limb(0.09 * s, 0, 0.95 * s, 0.07 * s, clothMat, hips, 'h_leg');
   const parts = { root, body, hips, torso, neck, head, armL, armR, legL, legR, eyes: eyeMeshes };
   let phase = 0;
   const animate = (dt, speed, mode = 'walk') => {

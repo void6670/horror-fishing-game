@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { Monster, makeHumanoid } from './Monster.js';
 import { audio } from '../engine/Audio.js';
+import { Models } from '../world/Models.js';
 import { rand, chance, clamp, damp, viewAngle } from '../util/math.js';
 
 // ---------------------------------------------------------------- The Leviathan
@@ -24,9 +25,13 @@ export class Leviathan extends Monster {
     this.tentacles = [];
     for (let i = 0; i < 3; i++) {
       const pts = []; for (let k = 0; k < 8; k++) pts.push(new THREE.Vector3(Math.sin(k * 0.6) * k * 0.3, k * 1.6, 0));
-      const t = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 24, 0.45, 6), dark);
-      const geo = t.geometry; const p = geo.attributes.position;
-      for (let v = 0; v < p.count; v++) { const y = p.getY(v); const k = 1 - y / 13; p.setX(v, p.getX(v) * (0.3 + k)); p.setZ(v, p.getZ(v) * (0.3 + k)); }
+      let t;
+      if (Models.geo('tentacle')) t = new THREE.Mesh(Models.geo('tentacle'), dark);
+      else {
+        t = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 24, 0.45, 6), dark);
+        const geo = t.geometry; const p = geo.attributes.position;
+        for (let v = 0; v < p.count; v++) { const y = p.getY(v); const k = 1 - y / 13; p.setX(v, p.getX(v) * (0.3 + k)); p.setZ(v, p.getZ(v) * (0.3 + k)); }
+      }
       t.visible = false;
       this.level.scene.add(t); this.tentacles.push(t);
     }

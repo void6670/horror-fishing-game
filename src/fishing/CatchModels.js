@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { clockFaceTexture, drawClockFace, photoTexture, textTexture } from '../world/Materials.js';
 import { CONFIG } from '../config.js';
+import { Models } from '../world/Models.js';
 
 // Procedural models for everything that can come out of the water.
 function fishSkin(base, pattern = 'plain', belly = '#d8d0b0', symbols = null) {
@@ -40,6 +41,14 @@ export function makeFish(desc) {
   const mat = new THREE.MeshStandardMaterial({ map: fishSkin(desc.color || '#5a6a40', desc.pattern, desc.belly, desc.symbols), roughness: 0.35, metalness: 0.15 });
   if (desc.glow) { mat.emissive = new THREE.Color(desc.glow); mat.emissiveIntensity = 0.5; }
   if (desc.translucent) { mat.transparent = true; mat.opacity = 0.55; }
+  const blenderFish = !desc.eel && Models.geo('fish_body');
+  if (blenderFish) {
+    // Blender body is 1 m long and 0.29 m deep; scale to this fish's length and girth.
+    const k = fat / 0.29;
+    const body = new THREE.Mesh(blenderFish, mat); body.scale.set(len, len * k, len * k); g.add(body);
+    const fins = new THREE.Mesh(Models.geo('fish_fins'), new THREE.MeshStandardMaterial({ color: desc.fin || desc.color || '#4a5030', side: THREE.DoubleSide, roughness: 0.6, transparent: true, opacity: 0.85 }));
+    fins.scale.set(len, len * k, len * k); g.add(fins);
+  }
   const bodyGeo = new THREE.SphereGeometry(0.5, 20, 14);
   bodyGeo.scale(desc.eel ? 0.08 : 1, desc.eel ? 0.08 : fat, desc.eel ? 1 : fat * 0.55);
   // taper the tail end
@@ -49,12 +58,14 @@ export function makeFish(desc) {
     if (!desc.eel && x < 0) { const k = 1 + x * 1.1; p.setY(i, p.getY(i) * k); p.setZ(i, p.getZ(i) * k); }
   }
   bodyGeo.computeVertexNormals();
-  const body = new THREE.Mesh(bodyGeo, mat);
-  if (desc.eel) { body.rotation.y = Math.PI / 2; }
-  body.scale.setScalar(len);
-  g.add(body);
+  if (!blenderFish) {
+    const body = new THREE.Mesh(bodyGeo, mat);
+    if (desc.eel) { body.rotation.y = Math.PI / 2; }
+    body.scale.setScalar(len);
+    g.add(body);
+  }
   const finMat = new THREE.MeshStandardMaterial({ color: desc.fin || desc.color || '#4a5030', side: THREE.DoubleSide, roughness: 0.6, transparent: true, opacity: 0.85 });
-  if (!desc.eel) {
+  if (!desc.eel && !blenderFish) {
     const tail = new THREE.Mesh(new THREE.ConeGeometry(fat * 0.5 * len, 0.3 * len, 3), finMat);
     tail.scale.z = 0.15; tail.rotation.z = Math.PI / 2; tail.position.x = -0.6 * len;
     g.add(tail);
@@ -131,6 +142,26 @@ export function makeFish(desc) {
 }
 
 export function makeAlarmClock() {
+  if (Models.geo('clock_case')) {
+    const g = new THREE.Group();
+    const brass = new THREE.MeshStandardMaterial({ color: 0x8a6a2a, roughness: 0.35, metalness: 0.85 });
+    const tex = clockFaceTexture();
+    g.add(Models.mesh('clock_case', brass));
+    g.add(Models.mesh('clock_face', new THREE.MeshStandardMaterial({ map: tex, roughness: 0.4 })));
+    const glass = new THREE.Mesh(new THREE.CircleGeometry(0.068, 24), new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.12, roughness: 0 }));
+    glass.position.z = 0.026; g.add(glass);
+    const hammer = Models.mesh('clock_hammer', brass); g.add(hammer);
+    const weed = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.004, 4, 20, 2.5), new THREE.MeshStandardMaterial({ color: 0x2a3a1a })); weed.rotation.set(1.2, 0.3, 0); g.add(weed);
+    g.userData.face = tex;
+    g.userData.hammer = hammer;
+    g.userData.setTime = (h, m, cracked) => drawClockFace(tex, h, m, cracked);
+    g.scale.setScalar(1.6);
+    return g;
+  }
+  return makeAlarmClockProcedural();
+}
+
+function makeAlarmClockProcedural() {
   const g = new THREE.Group();
   const brass = new THREE.MeshStandardMaterial({ color: 0x8a6a2a, roughness: 0.35, metalness: 0.85 });
   const tex = clockFaceTexture();

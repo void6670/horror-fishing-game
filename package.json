@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "artifact": "vite build && node scripts/build-artifact.mjs",
     "exe": "npm run artifact && node scripts/build-desktop.mjs && cd neutralino && npx -y @neutralinojs/neu@latest update && npx -y @neutralinojs/neu@latest build --embed-resources",
-    "exe:electron": "npm run artifact && node scripts/build-desktop.mjs && cd desktop && npm install && npm run dist:win"
+    "exe:electron": "npm run artifact && node scripts/build-desktop.mjs && cd desktop && npm install && npm run dist:win",
+    "models": "python blender/build_models.py && node scripts/embed-models.mjs"
   },
   "dependencies": {
     "three": "^0.186.1"

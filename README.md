@@ -94,6 +94,19 @@ Everything turns on the final night's alarm clock, on how many of the **seven me
 
 </details>
 
+## 3D models (Blender)
+
+The models are built in Blender by a script, `blender/build_models.py`: pine and dead trees, rocks, a fish body and fins (with UVs for the painted skins), the brass alarm clock, the rowboat, the car, the tent, gaunt body parts for every human figure (head, torso, coat, arms with hands, legs with waders, hat), the Leviathan's tentacle and the Angler's head and teeth. The output is `src/assets/models.glb`, embedded into the game by `scripts/embed-models.mjs`, so the single-file and .exe builds carry it inline. If the models are missing, the game falls back to its procedural shapes.
+
+To change a model, edit the script and run it with Blender:
+
+```bash
+blender --background --python blender/build_models.py   # or: pip install bpy && python blender/build_models.py
+node scripts/embed-models.mjs
+```
+
+`npm run models` does both (it needs `bpy` installed for your Python). `tools/model-preview.html` (open via `npm run dev`) shows every model on one sheet.
+
 ## Project layout
 
 ```

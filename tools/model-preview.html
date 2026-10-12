@@ -1,0 +1,33 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Model preview</title>
+<style>html,body{margin:0;background:#1b1e22;color:#ccc;font:12px monospace}canvas{display:block}</style></head>
+<body><script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import modelsUrl from '/src/assets/modelsData.js';
+const r = new THREE.WebGLRenderer({ antialias: true }); r.setSize(innerWidth, innerHeight); document.body.appendChild(r.domElement);
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x1b1e22);
+scene.add(new THREE.HemisphereLight(0xffffff, 0x334455, 1.4));
+const d = new THREE.DirectionalLight(0xffffff, 2.2); d.position.set(3, 5, 4); scene.add(d);
+const cam = new THREE.PerspectiveCamera(30, innerWidth / innerHeight, 0.01, 200);
+const groups = { clock: ['clock_case', 'clock_face', 'clock_hammer'], car: ['car_body', 'car_glass', 'car_wheels'], pine: ['pine_trunk', 'pine_crown'], fish: ['fish_body', 'fish_fins'], angler: ['angler_head', 'angler_teeth'] };
+new GLTFLoader().load(modelsUrl, (g) => {
+  const meshes = {}; g.scene.traverse((o) => { if (o.isMesh) meshes[o.name] = o; });
+  const used = new Set(Object.values(groups).flat());
+  const items = Object.keys(meshes).filter((n) => !used.has(n)).map((n) => [n]).concat(Object.values(groups));
+  const cols = 6;
+  items.forEach((names, i) => {
+    const grp = new THREE.Group();
+    names.forEach((n, k) => { const m = meshes[n].clone(); m.material = new THREE.MeshStandardMaterial({ color: new THREE.Color().setHSL((i * 0.13 + k * 0.3) % 1, 0.35, 0.6), roughness: 0.7, side: THREE.DoubleSide, flatShading: false }); grp.add(m); });
+    const box = new THREE.Box3().setFromObject(grp); const s = 1 / Math.max(...box.getSize(new THREE.Vector3()).toArray());
+    const c = box.getCenter(new THREE.Vector3());
+    grp.children.forEach((m) => m.position.sub(c));
+    grp.scale.setScalar(s); grp.rotation.y = 0.7; grp.rotation.x = 0.15;
+    grp.position.set((i % cols) * 1.25, -Math.floor(i / cols) * 1.25, 0);
+    scene.add(grp);
+    const lbl = document.createElement('div'); lbl.textContent = names[0]; lbl.style.cssText = `position:absolute;left:${((i % cols) + 0.15) / cols * 100}%;top:${Math.floor(i / cols) * 22 + 3}%`; document.body.appendChild(lbl);
+  });
+  cam.position.set(3.1, -1.9, 9.5); cam.lookAt(3.1, -1.9, 0);
+  r.render(scene, cam); window.done = true;
+});
+</script></body></html>

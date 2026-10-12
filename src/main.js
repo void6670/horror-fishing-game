@@ -25,6 +25,7 @@ import { buildRealWorld } from './levels/RealWorld.js';
 import { buildEnding } from './story/Endings.js';
 import { NIGHT_INTROS, DAY_TEXT, ENDINGS, MEMORY_ORDER, N } from './story/Text.js';
 import { makeHumanoid } from './monsters/Monster.js';
+import { Models } from './world/Models.js';
 import { clamp, damp, fmtTime, rand, smooth } from './util/math.js';
 
 const BUILDERS = [null, (g) => buildHollowLake(g, false), buildFrozenLake, buildOpenSea, buildHarbor, buildSwamp, buildDeep, (g) => buildHollowLake(g, true)];
@@ -72,6 +73,9 @@ class Game {
     document.addEventListener('pointerdown', () => audio.init(), { once: false });
     document.addEventListener('keydown', () => audio.init());
     window.__game = this;
+    window.__THREE = THREE;
+    window.__Models = Models;
+    this.__cat = (id) => CATALOG.find((e) => e.id === id);
     this.frames = 0;
     this.renderer.setAnimationLoop(() => this.tick());
   }
@@ -689,8 +693,11 @@ function visitorEvent() {
 const game = new Game();
 const params = new URLSearchParams(location.search);
 if (params.has('fast')) game.fastIntro = true;
-if (params.has('night')) { const n = +params.get('night'); game.story.reset(); game.startNight(n); }
-else if (params.has('day')) { game.startDay(+params.get('day')); }
-else if (params.has('ending')) { game.playEnding(params.get('ending')); }
-else game.showTitle();
+// Load the Blender-made models first, then start.
+Models.load().then(() => {
+  if (params.has('night')) { const n = +params.get('night'); game.story.reset(); game.startNight(n); }
+  else if (params.has('day')) { game.startDay(+params.get('day')); }
+  else if (params.has('ending')) { game.playEnding(params.get('ending')); }
+  else game.showTitle();
+});
 void damp;
